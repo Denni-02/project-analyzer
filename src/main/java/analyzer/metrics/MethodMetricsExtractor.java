@@ -21,6 +21,7 @@ import net.sourceforge.pmd.lang.LanguageRegistry;
 import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.reporting.Report;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 
 public class MethodMetricsExtractor {
 
@@ -68,8 +69,10 @@ public class MethodMetricsExtractor {
                 fileCount++;
             }
 
-            Configuration.logger.info("File .java analizzati: " + fileCount);
-            Configuration.logger.info("Chiamo analisi storica su " + methodInfos.size() + " metodi.");
+            if(Configuration.BASIC_DEBUG && Configuration.logger.isLoggable(Level.INFO)){
+                Configuration.logger.info(String.format("File .java analizzati: %d", fileCount));
+                Configuration.logger.info(String.format("Chiamo analisi storica su %d metodi.", methodInfos.size()));
+            }
 
             historicalExtractor.analyzeHistoryForMethods(methodInfos, currentRelease);
 
@@ -133,7 +136,7 @@ public class MethodMetricsExtractor {
                     methodInfos.add(info);
 
                     if (Configuration.BASIC_DEBUG && methodInfos.size() % 1000 == 0) {
-                        String debugPath = "/home/denni/isw2/project-analyzer/debug_file/debug_sampled_methods.txt";
+                        String debugPath = Configuration.DEBUG_SAMPLED_METHODS_PATH1;
                         MethodInfo sampled = methodInfos.get(methodInfos.size() - 1);
                         logDebugSample(methodInfos.size(), sampled, debugPath);
                     }

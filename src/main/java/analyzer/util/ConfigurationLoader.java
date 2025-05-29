@@ -1,10 +1,16 @@
 package analyzer.util;
 
+import analyzer.exception.ConfigurationLoadException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigurationLoader {
+
+    private ConfigurationLoader(){
+        // Prevent instantation
+    }
     private static final Properties props = new Properties();
 
     static {
@@ -12,10 +18,10 @@ public class ConfigurationLoader {
             if (input != null) {
                 props.load(input);
             } else {
-                throw new RuntimeException("File config.properties non trovato");
+                throw new ConfigurationLoadException("File config.properties non trovato");
             }
         } catch (IOException e) {
-            throw new RuntimeException("Errore caricando config.properties", e);
+            throw new ConfigurationLoadException("Errore caricando config.properties", e);
         }
     }
 

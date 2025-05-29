@@ -21,4 +21,6 @@ public class Configuration {
     public static final String OUTPUT_ARFF1_PATH = ConfigurationLoader.get("project1.output_arff");
     public static final String PROJECT1_SUBSTRING = "bookkeeper/";
     public static final String PROJECT1_COLUMN = "Bookkeeper";
+    public static final String DEBUG_SAMPLED_METHODS_PATH1 = ConfigurationLoader.get("debug.sampled_methods_path1");
+
 }

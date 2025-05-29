@@ -14,6 +14,7 @@ import org.eclipse.jgit.util.io.DisabledOutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class HistoricalMetricExtractor {
@@ -31,11 +32,11 @@ public class HistoricalMetricExtractor {
         Map<String, MethodHistoryStats> statsMap = new HashMap<>();
         Map<String, MethodInfo> methodByKey = new HashMap<>();
 
-        for (String filePath : methodsByFile.keySet()) {
+        for (Map.Entry<String, List<MethodInfo>> entry : methodsByFile.entrySet()) {
 
-            if (Configuration.HISTORY_DEBUG) Configuration.logger.info("Analizzo storico file: " + filePath);
+            String filePath = entry.getKey();
+            List<MethodInfo> methodList = entry.getValue();
 
-            List<MethodInfo> methodList = methodsByFile.get(filePath);
 
             for (MethodInfo m : methodList) {
                 String key = buildMethodKey(m);
@@ -47,7 +48,6 @@ public class HistoricalMetricExtractor {
 
                 for (RevCommit commit : commits) {
                     if (commit.getParentCount() == 0) {
-                        if (Configuration.HISTORY_DEBUG) Configuration.logger.info("Skip root commit: " + commit.getName());
                         continue;
                     }
                     RevCommit parent = repo.parseCommit(commit);
@@ -55,8 +55,8 @@ public class HistoricalMetricExtractor {
                 }
 
             } catch (Exception e) {
-                System.err.println("Errore analizzando la storia per il file: " + filePath);
-                e.printStackTrace();
+                Configuration.logger.log(Level.SEVERE,
+                        String.format("Errore analizzando la storia per il file: %s", filePath), e);
             }
         }
 
@@ -102,9 +102,6 @@ public class HistoricalMetricExtractor {
 
             List<DiffEntry> diffs = df.scan(parent.getTree(), current.getTree());
 
-            if (Configuration.HISTORY_DEBUG)
-                Configuration.logger.info("Analizzo diff tra commit " + parent.getName() + " → " + current.getName());
-
             for (DiffEntry diff : diffs) {
                 if (!diff.getNewPath().equals(filePath)) continue;
 
@@ -115,7 +112,8 @@ public class HistoricalMetricExtractor {
                     int end = method.getEndLine();
 
                     boolean touched = false;
-                    int added = 0, deleted = 0;
+                    int added = 0;
+                    int deleted = 0;
 
                     for (Edit edit : edits) {
                         int editStart = edit.getBeginB();
@@ -147,8 +145,8 @@ public class HistoricalMetricExtractor {
             }
 
         } catch (Exception e) {
-            System.err.println("Errore nel diff tra commit " + parent.getName() + " e " + current.getName());
-            e.printStackTrace();
+            Configuration.logger.log(Level.SEVERE,
+                    String.format("Errore nel diff tra commit %s e %s", parent.getName(), current.getName()), e);
         }
     }
 
