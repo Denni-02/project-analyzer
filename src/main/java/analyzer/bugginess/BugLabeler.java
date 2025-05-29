@@ -8,6 +8,7 @@ import analyzer.model.Release;
 import analyzer.util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
 import java.util.*;
+import java.util.logging.Level;
 
 public class BugLabeler {
 
@@ -55,7 +56,7 @@ public class BugLabeler {
                 String estIV = estimator.estimateIV(ticket);
                 String fv = estimator.normalizeVersionName(ticket.getFixVersionName());
 
-                if (Configuration.LABELING_DEBUG) {
+                if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
                     if (estIV == null) {
                         Configuration.logger.info(String.format("Ticket " + ticket.getId() + ": stima IV fallita."));
                     } else {
