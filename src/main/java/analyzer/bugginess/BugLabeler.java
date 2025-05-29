@@ -53,11 +53,7 @@ public class BugLabeler {
 
         // 3. Inizializza ProportionEstimator per stimare IV
         ProportionEstimator estimator = new ProportionEstimator(releases);
-        for (TicketInfo t : tickets.values()) {
-            if (!t.getAffectedVersions().isEmpty()) {
-                estimator.registerValidTicket(t); // serve per stima incrementale
-            }
-        }
+        registerValidTickets(tickets, estimator);
 
         // 4. Colleziona metodi etichettati per debug
         List<String[]> debugRows = new ArrayList<>();
@@ -91,8 +87,20 @@ public class BugLabeler {
             }
         }
 
+        // 6. CSV di debug opzionale
+        writeDebugCsv(debugRows);
 
-        // 8. CSV di debug opzionale
+    }
+
+    private static void registerValidTickets(Map<String, TicketInfo> tickets, ProportionEstimator estimator) {
+        for (TicketInfo t : tickets.values()) {
+            if (!t.getAffectedVersions().isEmpty()) {
+                estimator.registerValidTicket(t);
+            }
+        }
+    }
+
+    private static void writeDebugCsv(List<String[]> debugRows) {
         if (Configuration.LABELING_DEBUG) {
             CsvBugLabelerDebug.writeCsv(
                     "/home/denni/isw2/project-analyzer/debug_file/debug_buggy_methods.csv",
@@ -114,36 +122,53 @@ public class BugLabeler {
         if (!ticket.getAffectedVersions().isEmpty()) {
             buggyReleases.addAll(ticket.getAffectedVersions());
         } else {
-            if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
-                Configuration.logger.info(TICKET_PREFIX + ticket.getId() + " NON ha AV → provo stima IV");
-                Configuration.logger.info("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
-            }
+            logNoAV(ticket);
 
             String estIV = estimator.estimateIV(ticket);
             String fv = estimator.normalizeVersionName(ticket.getFixVersionName());
 
-            if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
-                if (estIV == null) {
-                    Configuration.logger.info(String.format("Ticket %s: stima IV fallita.", ticket.getId()));
-                } else {
-                    Configuration.logger.info(String.format("Ticket %s: stima IV riuscita -> %s", ticket.getId(), estIV));
-                }
-            }
+            logEstimationResult(estIV, ticket);
 
-            if (estIV != null && fv != null) {
-                ReleaseIndexMapper mapper = estimator.getMapper();
-                int ivIndex = mapper.getIndex(estIV);
-                int fvIndex = mapper.getIndex(fv);
-
-                for (int i = ivIndex; i < fvIndex; i++) {
-                    String rel = mapper.getReleaseName(i);
-                    if (rel != null) buggyReleases.add(rel);
-                }
-            }
+            buggyReleases.addAll(computeIntervalReleases(estIV, fv, estimator));
         }
 
         return buggyReleases;
     }
+
+
+    private static void logNoAV(TicketInfo ticket) {
+        if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
+            Configuration.logger.info(TICKET_PREFIX + ticket.getId() + " NON ha AV → provo stima IV");
+            Configuration.logger.info("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
+        }
+    }
+
+    private static void logEstimationResult(String estIV, TicketInfo ticket) {
+        if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
+            if (estIV == null) {
+                Configuration.logger.info(String.format("Ticket %s: stima IV fallita.", ticket.getId()));
+            } else {
+                Configuration.logger.info(String.format("Ticket %s: stima IV riuscita -> %s", ticket.getId(), estIV));
+            }
+        }
+    }
+
+    private static Set<String> computeIntervalReleases(String estIV, String fv, ProportionEstimator estimator) {
+        Set<String> releases = new HashSet<>();
+        if (estIV == null || fv == null) return releases;
+
+        ReleaseIndexMapper mapper = estimator.getMapper();
+        int ivIndex = mapper.getIndex(estIV);
+        int fvIndex = mapper.getIndex(fv);
+
+        for (int i = ivIndex; i < fvIndex; i++) {
+            String rel = mapper.getReleaseName(i);
+            if (rel != null) releases.add(rel);
+        }
+
+        return releases;
+    }
+
 
     private static boolean filterValidBuggyReleases(TicketInfo ticket, Set<String> buggyReleases, List<MethodInfo> methods) {
         Set<String> availableReleases = new HashSet<>();
@@ -154,7 +179,7 @@ public class BugLabeler {
         buggyReleases.retainAll(availableReleases);
 
         if (buggyReleases.isEmpty()) {
-            if (Configuration.LABELING_DEBUG) {
+            if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
                 Configuration.logger.info(String.format("%s%s: tutte le buggyReleases fuori dal dataset", TICKET_PREFIX, ticket.getId()));
             }
             return false;
@@ -171,60 +196,75 @@ public class BugLabeler {
             MethodTouchAnalyzer analyzer,
             List<String[]> debugRows
     ) {
-        int buggyFromAV = 0;
-        int buggyFromProportion = 0;
+        int[] counters = new int[]{0, 0}; // counters[0] = buggyFromAV, counters[1] = buggyFromProportion
 
         for (String commitHash : ticket.getCommitIds()) {
-            RevCommit commit;
-            try {
-                commit = repo.getGit().log()
-                        .add(repo.getGit().getRepository().resolve(commitHash))
-                        .call().iterator().next();
-            } catch (Exception e) {
-                Configuration.logger.severe(String.format("Errore leggendo commit %s", commitHash));
-                continue;
-            }
+            RevCommit commit = resolveCommit(commitHash, repo);
+            if (commit == null) continue;
 
             Set<String> files = new HashSet<>(ticket.getFixedFiles());
-
             for (String filePath : files) {
                 for (String releaseId : buggyReleases) {
                     String key = filePath + "@" + releaseId;
                     if (!methodsByFileAndRelease.containsKey(key)) continue;
-                    List<MethodInfo> candidates = methodsByFileAndRelease.get(key);
 
+                    List<MethodInfo> candidates = methodsByFileAndRelease.get(key);
                     Set<MethodInfo> touched = analyzer.getTouchedMethods(commit, filePath, candidates);
 
-                    if (touched.isEmpty() && Configuration.LABELING_DEBUG) {
-                        Configuration.logger.info(String.format("Commit %s su file %s @ %s NON tocca metodi metricati.", commit.getName(), filePath, releaseId));
+                    if (touched.isEmpty() && Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
+                        Configuration.logger.info(String.format("Commit %s su file %s @ %s NON tocca metodi metricati.",
+                                commit.getName(), filePath, releaseId));
                         Configuration.logger.info(String.format("   → File toccato, metodi candidati: %d", candidates.size()));
                     }
 
-                    for (MethodInfo m : touched) {
-                        if (!m.isBugginess()) {
-                            m.setBugginess(true);
-                            if (!ticket.getAffectedVersions().isEmpty()) {
-                                buggyFromAV++;
-                            } else {
-                                buggyFromProportion++;
-                            }
-                            if (Configuration.LABELING_DEBUG) {
-                                debugRows.add(new String[]{
-                                        ticket.getId(),
-                                        commit.getName(),
-                                        m.getMethodName(),
-                                        m.getReleaseId()
-                                });
-                            }
-                        }
-                    }
+                    processTouchedMethods(touched, ticket, commit, debugRows, counters);
                 }
             }
         }
 
-        return new int[]{buggyFromAV, buggyFromProportion};
+        return counters;
     }
 
+
+
+    private static RevCommit resolveCommit(String commitHash, GitRepository repo) {
+        try {
+            return repo.getGit().log()
+                    .add(repo.getGit().getRepository().resolve(commitHash))
+                    .call().iterator().next();
+        } catch (Exception e) {
+            Configuration.logger.severe(String.format("Errore leggendo commit %s", commitHash));
+            return null;
+        }
+    }
+
+    private static void processTouchedMethods(
+            Set<MethodInfo> touched,
+            TicketInfo ticket,
+            RevCommit commit,
+            List<String[]> debugRows,
+            int[] counters
+    ) {
+        for (MethodInfo m : touched) {
+            if (!m.isBugginess()) {
+                m.setBugginess(true);
+                if (!ticket.getAffectedVersions().isEmpty()) {
+                    counters[0]++;
+                } else {
+                    counters[1]++;
+                }
+
+                if (Configuration.LABELING_DEBUG) {
+                    debugRows.add(new String[]{
+                            ticket.getId(),
+                            commit.getName(),
+                            m.getMethodName(),
+                            m.getReleaseId()
+                    });
+                }
+            }
+        }
+    }
 
 
 }
