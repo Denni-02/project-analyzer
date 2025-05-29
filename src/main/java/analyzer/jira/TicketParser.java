@@ -141,7 +141,9 @@ public class TicketParser {
 
     public static Map<String, TicketInfo> parseTicketsFromProject(String projectKey) throws JiraParsingException {
         Map<String, TicketInfo> ticketMap = new HashMap<>();
-        int startAt = 0, maxResults = 1000, total = 1;
+        int startAt = 0;
+        int maxResults = 1000;
+        int total = 1;
 
         try {
             while (startAt < total) {
