@@ -10,11 +10,15 @@ import java.util.List;
 
 public class CsvDebugWriter {
 
+    private CsvDebugWriter() {
+        // Utility class → no instances allowed
+    }
+
     public static void writeCommitCsv(String path, List<Commit> commits) {
         try (FileWriter fw = new FileWriter(path)) {
-            fw.write("CommitID;Author;Date;Message\n");
+            fw.write("CommitID;Author;Date;Message%n");
             for (Commit c : commits) {
-                fw.write(String.format("%s;%s;%s;%s\n",
+                fw.write(String.format("%s;%s;%s;%s%n",
                         c.getId(),
                         c.getAuthor(),
                         c.getDate(),
@@ -28,10 +32,10 @@ public class CsvDebugWriter {
 
     public static void writeReleaseCsv(String path, List<Release> all, List<Release> selected) {
         try (FileWriter fw = new FileWriter(path)) {
-            fw.write("Index;Version ID;Version Name;Release Date;Selected\n");
+            fw.write("Index;Version ID;Version Name;Release Date;Selected%n");
             int i = 1;
             for (Release r : all) {
-                fw.write(String.format("%d;%s;%s;%s;%s\n",
+                fw.write(String.format("%d;%s;%s;%s;%s%n",
                         i++,
                         r.getId(),
                         r.getName(),

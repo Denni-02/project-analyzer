@@ -6,6 +6,10 @@ import weka.core.Instances;
 
 public class ClassifierEvaluator {
 
+    private ClassifierEvaluator(){
+        // Prevent instantiation
+    }
+
     public static EvaluationResult evaluateClassifier(String name, Classifier cls, Instances data, int seed, int folds, int repeats) throws Exception {
         Evaluation eval = CrossValidator.evaluate(cls, data, seed, folds, repeats);
 

@@ -1,9 +1,6 @@
 package analyzer.bugginess;
 
-import analyzer.jira.GetReleaseInfo;
 import analyzer.model.Release;
-import analyzer.util.Configuration;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

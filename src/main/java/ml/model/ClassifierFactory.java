@@ -7,6 +7,10 @@ import weka.classifiers.trees.RandomForest;
 
 public class ClassifierFactory {
 
+    private ClassifierFactory(){
+        // Prevent instantiation
+    }
+
     public static Classifier getNaiveBayes() {
         return new NaiveBayes(); // default params
     }

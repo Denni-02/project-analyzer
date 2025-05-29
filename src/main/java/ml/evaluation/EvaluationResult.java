@@ -2,13 +2,13 @@ package ml.evaluation;
 
 public class EvaluationResult {
 
-    public double accuracy;
-    public double precision;
-    public double recall;
-    public double f1;
-    public double auc;
-    public double kappa;
-    public String classifierName;
+    private double accuracy;
+    private double precision;
+    private double recall;
+    private double f1;
+    private double auc;
+    private double kappa;
+    private String classifierName;
 
     public EvaluationResult(String name, double accuracy, double precision, double recall, double f1, double auc, double kappa) {
         this.classifierName = name;

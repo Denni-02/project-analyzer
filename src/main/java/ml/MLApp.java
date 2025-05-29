@@ -9,19 +9,23 @@ import ml.model.ClassifierFactory;
 import ml.evaluation.ClassifierEvaluator;
 import ml.evaluation.EvaluationResult;
 
+import java.util.logging.Level;
+
 
 public class MLApp {
+
+    private static final String RESULT_LABEL = "Risultato:";
 
     public static void main(String[] args) {
 
         try {
 
             // === 1. Conversione da CSV a ARFF ===
-            if(Configuration.ML_DEBUG) Configuration.logger.info("Converto il file CSV in ARFF...");
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("Converto il file CSV in ARFF...");
             CSVToARFFConverter.main(null);  // usa la tua classe esistente
 
             // === 2. Caricamento del file ARFF ===
-            if(Configuration.ML_DEBUG) Configuration.logger.info("Carico il dataset ARFF...");
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("Carico il dataset ARFF...");
             DataSource source = new DataSource(Configuration.OUTPUT_ARFF1_PATH);
             Instances data = source.getDataSet();
 
@@ -31,7 +35,7 @@ public class MLApp {
             }
 
             // === 4. Info di controllo ===
-            if(Configuration.ML_DEBUG) {
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) {
                 Configuration.logger.info("Dataset caricato correttamente.");
                 Configuration.logger.info("   - Istanze: " + data.numInstances());
                 Configuration.logger.info("   - Attributi: " + data.numAttributes());
@@ -39,35 +43,37 @@ public class MLApp {
                 Configuration.logger.info("   - Valori possibili: " + data.classAttribute());
             }
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione NaiveBayes in corso...");
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione NaiveBayes in corso...");
 
             Classifier naive = ClassifierFactory.getNaiveBayes();
             EvaluationResult nbResult = ClassifierEvaluator.evaluateClassifier(
                     "NaiveBayes", naive, data, 42, 10, 10
             );
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("Risultato:" + nbResult);
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, nbResult));
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione IBk in corso...");
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione IBk in corso...");
 
             Classifier ibk = ClassifierFactory.getIBk();
             EvaluationResult ibkResult = ClassifierEvaluator.evaluateClassifier(
                     "IBk", ibk, data, 42, 10, 10
             );
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("Risultato:" + ibkResult);
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, ibkResult));
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione Random Forest in corso...");
+
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione Random Forest in corso...");
 
             Classifier randomForest = ClassifierFactory.getRandomForest();
             EvaluationResult rfResult = ClassifierEvaluator.evaluateClassifier(
                     "RandomForest", randomForest, data, 42, 10, 10
             );
 
-            if(Configuration.ML_DEBUG) Configuration.logger.info("Risultato:" + rfResult);
+            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, rfResult));
+
 
         } catch (Exception e) {
-            System.err.println("Errore in MLApp: " + e.getMessage());
+            Configuration.logger.log(Level.SEVERE, "Errore in MLApp", e);
             e.printStackTrace();
         }
     }

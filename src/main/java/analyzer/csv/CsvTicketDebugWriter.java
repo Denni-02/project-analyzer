@@ -9,13 +9,17 @@ import java.util.Map;
 
 public class CsvTicketDebugWriter {
 
+    private CsvTicketDebugWriter() {
+        // Utility class → no instances allowed
+    }
+
     public static void writeTicketCsv(String outputPath, Map<String, TicketInfo> tickets) {
         try (FileWriter fw = new FileWriter(outputPath)) {
             fw.write("TicketID;OpeningVersion;FixVersionName;FixVersionDate;AllFixVersions;AffectedVersions\n");
 
             for (Map.Entry<String, TicketInfo> entry : tickets.entrySet()) {
                 TicketInfo t = entry.getValue();
-                fw.write(String.format("%s;%s;%s;%s;%s;%s\n",
+                fw.write(String.format("%s;%s;%s;%s;%s;%s%n",
                         t.getId(),
                         t.getOpeningVersion(),
                         t.getFixVersionName(),
@@ -25,8 +29,6 @@ public class CsvTicketDebugWriter {
                 ));
 
             }
-
-            Configuration.logger.info("File CSV ticket salvato in: " + outputPath);
 
         } catch (IOException e) {
             Configuration.logger.info("Errore nella scrittura del file CSV dei ticket.");

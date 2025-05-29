@@ -28,6 +28,6 @@ public class CSVToARFFConverter {
         saver.setFile(new File(arffPath));              // imposta il file di output
         saver.writeBatch();                             // esegue il salvataggio
 
-        Configuration.logger.info("Conversione completata: " + arffPath);
+        Configuration.logger.info(String.format("Conversione completata: path = %s", arffPath));
     }
 }

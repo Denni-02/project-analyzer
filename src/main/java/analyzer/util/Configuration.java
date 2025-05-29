@@ -3,8 +3,13 @@ package analyzer.util;
 import java.util.logging.Logger;
 
 public class Configuration {
+
+    private Configuration(){
+        // Prevent instantiation
+    }
+
     public static final boolean BASIC_DEBUG = true;
-    public static final boolean LOGGER = false;
+    public static final boolean ACTIVATE_LOG = false;
     public static final boolean HISTORY_DEBUG = false;
     public static final boolean TICKET_DEBUG = false;
     public static final boolean LABELING_DEBUG = false;

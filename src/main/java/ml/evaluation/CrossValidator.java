@@ -8,6 +8,10 @@ import java.util.Random;
 
 public class CrossValidator {
 
+    private CrossValidator(){
+        // Prevent instantiation
+    }
+
     public static Evaluation evaluate(Classifier cls, Instances data, int seed, int folds, int repeats) throws Exception {
         Evaluation evaluation = new Evaluation(data);
         Random rand = new Random(seed);

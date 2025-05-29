@@ -26,7 +26,7 @@ public class DatasetApp {
 
     public static void main(String[] args) {
 
-        if (!Configuration.LOGGER) {
+        if (!Configuration.ACTIVATE_LOG) {
             // Disabilita i log di PMD
             ch.qos.logback.classic.Logger pmdLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("net.sourceforge.pmd");
             pmdLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
