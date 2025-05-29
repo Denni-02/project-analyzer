@@ -57,7 +57,7 @@ public class BugLabeler {
 
                 if (Configuration.LABELING_DEBUG) {
                     if (estIV == null) {
-                        Configuration.logger.info("Ticket " + ticket.getId() + ": stima IV fallita.");
+                        Configuration.logger.info(String.format("Ticket " + ticket.getId() + ": stima IV fallita."));
                     } else {
                         Configuration.logger.info("Ticket " + ticket.getId() + ": stima IV riuscita → " + estIV);
                     }
