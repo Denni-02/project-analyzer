@@ -108,40 +108,9 @@ public class HistoricalMetricExtractor {
                 List<Edit> edits = df.toFileHeader(diff).toEditList();
 
                 for (MethodInfo method : methods) {
-                    int start = method.getStartLine();
-                    int end = method.getEndLine();
-
-                    boolean touched = false;
-                    int added = 0;
-                    int deleted = 0;
-
-                    for (Edit edit : edits) {
-                        int editStart = edit.getBeginB();
-                        int editEnd = edit.getEndB();
-
-                        if (editEnd > start && editStart < end) {
-                            touched = true;
-
-                            int overlapStart = Math.max(editStart, start);
-                            int overlapEnd = Math.min(editEnd, end);
-                            int addedInMethod = Math.max(0, overlapEnd - overlapStart);
-                            added += addedInMethod;
-
-                            int editStartA = edit.getBeginA();
-                            int editEndA = edit.getEndA();
-                            int overlapStartA = Math.max(editStartA, start);
-                            int overlapEndA = Math.min(editEndA, end);
-                            int deletedInMethod = Math.max(0, overlapEndA - overlapStartA);
-                            deleted += deletedInMethod;
-                        }
-                    }
-
-                    if (touched) {
-                        String key = buildMethodKey(method);
-                        MethodHistoryStats stats = statsMap.computeIfAbsent(key, k -> new MethodHistoryStats());
-                        stats.addEdit(added, deleted, current.getAuthorIdent().getName());
-                    }
+                    calculateStatsForEdit(method, edits, current, statsMap);
                 }
+
             }
 
         } catch (Exception e) {
@@ -149,6 +118,40 @@ public class HistoricalMetricExtractor {
                     String.format("Errore nel diff tra commit %s e %s", parent.getName(), current.getName()), e);
         }
     }
+
+    private void calculateStatsForEdit(MethodInfo method, List<Edit> edits, RevCommit current, Map<String, MethodHistoryStats> statsMap) {
+        int start = method.getStartLine();
+        int end = method.getEndLine();
+        int added = 0;
+        int deleted = 0;
+        boolean touched = false;
+
+        for (Edit edit : edits) {
+            int editStart = edit.getBeginB();
+            int editEnd = edit.getEndB();
+
+            if (editEnd > start && editStart < end) {
+                touched = true;
+
+                int overlapStart = Math.max(editStart, start);
+                int overlapEnd = Math.min(editEnd, end);
+                added += Math.max(0, overlapEnd - overlapStart);
+
+                int editStartA = edit.getBeginA();
+                int editEndA = edit.getEndA();
+                int overlapStartA = Math.max(editStartA, start);
+                int overlapEndA = Math.min(editEndA, end);
+                deleted += Math.max(0, overlapEndA - overlapStartA);
+            }
+        }
+
+        if (touched) {
+            String key = buildMethodKey(method);
+            MethodHistoryStats stats = statsMap.computeIfAbsent(key, k -> new MethodHistoryStats());
+            stats.addEdit(added, deleted, current.getAuthorIdent().getName());
+        }
+    }
+
 
 
 }

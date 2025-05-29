@@ -99,7 +99,7 @@ public class MethodMetricsExtractor {
 
             PMDConfiguration config = new PMDConfiguration();
             config.setDefaultLanguageVersion(javaVersion);
-            //config.addRuleSet("category/java/design.xml");
+            config.addRuleSet("category/java/design.xml");
             config.addRuleSet("category/java/bestpractices.xml");
             config.addInputPath(path);
 
