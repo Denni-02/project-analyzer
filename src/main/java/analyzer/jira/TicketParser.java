@@ -75,7 +75,7 @@ public class TicketParser {
         String earliestFVName = parseFixVersions(ticket, fixVersions);
         if (earliestFVName == null) return null;
 
-        JSONArray affectedVersions = fields.optJSONArray("versions");
+        JSONArray affectedVersions = fields.optJSONArray(VERSIONS_STRING);
         parseAffectedVersions(ticket, affectedVersions);
 
         return ticket;
@@ -88,9 +88,9 @@ public class TicketParser {
 
         for (int j = 0; j < fixVersions.length(); j++) {
             JSONObject fv = fixVersions.getJSONObject(j);
-            if (fv.has("releaseDate") && fv.has("name")) {
+            if (fv.has(RELEASE_DATE_STRING) && fv.has("name")) {
                 String fvName = fv.getString("name");
-                LocalDate fvDate = LocalDate.parse(fv.getString("releaseDate"));
+                LocalDate fvDate = LocalDate.parse(fv.getString(RELEASE_DATE_STRING));
                 ticket.addFixVersion(fvName, fvDate);
 
                 if (earliestFVDate == null || fvDate.isBefore(earliestFVDate)) {
