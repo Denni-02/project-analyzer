@@ -68,8 +68,8 @@ public class MethodMetricsExtractor {
                 fileCount++;
             }
 
-            System.out.println("File .java analizzati: " + fileCount);
-            System.out.println("Chiamo analisi storica su " + methodInfos.size() + " metodi.");
+            Configuration.logger.info("File .java analizzati: " + fileCount);
+            Configuration.logger.info("Chiamo analisi storica su " + methodInfos.size() + " metodi.");
 
             historicalExtractor.analyzeHistoryForMethods(methodInfos, currentRelease);
 

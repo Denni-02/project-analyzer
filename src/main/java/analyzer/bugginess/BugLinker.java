@@ -38,26 +38,26 @@ public class BugLinker {
 
                 if (Configuration.TICKET_DEBUG) {
                     if (javaFiles.isEmpty()) {
-                        if (Configuration.TICKET_DEBUG) System.out.println("Commit " + commitHash + " non modifica file Java per ticket " + ticketId);
+                        if (Configuration.TICKET_DEBUG) Configuration.logger.info("Commit " + commitHash + " non modifica file Java per ticket " + ticketId);
                     } else {
-                        if (Configuration.TICKET_DEBUG) System.out.println("Ticket " + ticketId + " → commit " + commitHash + " tocca file: " + javaFiles);
+                        if (Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + ticketId + " → commit " + commitHash + " tocca file: " + javaFiles);
                     }
                 }
 
-                if (Configuration.TICKET_DEBUG) System.out.println("Collegato commit " + commitHash + " al ticket " + ticketId);
+                if (Configuration.TICKET_DEBUG) Configuration.logger.info("Collegato commit " + commitHash + " al ticket " + ticketId);
             }
 
             if (ticket.getCommitIds().isEmpty()) {
-                if (Configuration.TICKET_DEBUG) System.out.println("Nessun commit trovato per ticket " + ticketId);
+                if (Configuration.TICKET_DEBUG) Configuration.logger.info("Nessun commit trovato per ticket " + ticketId);
             }
         }
 
-        if (Configuration.TICKET_DEBUG) System.out.println("Collegamento ticket → commit completato.");
+        if (Configuration.TICKET_DEBUG) Configuration.logger.info("Collegamento ticket → commit completato.");
     }
 
     public void applyMissingCommitLinkageHeuristic(Map<String, TicketInfo> tickets) throws Exception {
 
-        if (Configuration.LABELING_DEBUG) System.out.println("Inizio Heuristic...");
+        if (Configuration.LABELING_DEBUG) Configuration.logger.info("Inizio Heuristic...");
 
         for (TicketInfo ticket : tickets.values()) {
             if (ticket.getFixVersion() == null || ticket.getOpeningVersion() == null) continue;
@@ -87,7 +87,7 @@ public class BugLinker {
                         }
 
                         if (Configuration.LABELING_DEBUG) {
-                            System.out.printf("Snoring → Commit %s collegato a %s\n", commit.getName(), ticket.getId());
+                            System.out.printf("Heuristic → Commit %s collegato a %s\n", commit.getName(), ticket.getId());
                         }
 
                         break;

@@ -48,11 +48,11 @@ public class TicketParser {
 
                 JSONArray fixVersions = fields.getJSONArray("fixVersions");
                 skippedNoFixVersion++;
-                if(Configuration.TICKET_DEBUG) System.out.println("Ticket " + key + " SCARTATO: nessuna Fix Version");
+                if(Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " SCARTATO: nessuna Fix Version");
 
                 if (fixVersions.length() == 0) {
                     if (Configuration.TICKET_DEBUG)
-                        System.out.println("Ticket " + key + " scartato: nessuna Fix Version");
+                        Configuration.logger.info("Ticket " + key + " scartato: nessuna Fix Version");
                     continue;
                 }
 
@@ -80,10 +80,10 @@ public class TicketParser {
                 }
 
                 skippedAllFVNoReleaseDate++;
-                if(Configuration.TICKET_DEBUG) System.out.println("Ticket " + key + " SCARTATO: tutte le FV sono senza releaseDate");
+                if(Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " SCARTATO: tutte le FV sono senza releaseDate");
 
                 if (earliestFVDate == null) {
-                    if (Configuration.TICKET_DEBUG) System.out.println("Ticket " + key + " scartato: tutte le FV sono senza releaseDate");
+                    if (Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " scartato: tutte le FV sono senza releaseDate");
                     continue;
                 }
 
@@ -103,7 +103,7 @@ public class TicketParser {
                 ticketMap.put(key, ticket);
 
                 if (Configuration.TICKET_DEBUG) {
-                    System.out.println("Ticket " + key +
+                    Configuration.logger.info("Ticket " + key +
                             ": OV=" + createdDate +
                             ", FV=" + ticket.getFixVersionName() +
                             ", AVs=" + ticket.getAffectedVersions() +
@@ -115,11 +115,11 @@ public class TicketParser {
         }
 
         if(Configuration.TICKET_DEBUG) {
-            System.out.println("Ticket validi scaricati da JIRA: " + ticketMap.size());
-            System.out.println("Ticket totali letti: " + totalTickets);
-            System.out.println("Scartati per FixVersion mancante: " + skippedNoFixVersion);
-            System.out.println("Scartati per FV senza releaseDate: " + skippedAllFVNoReleaseDate);
-            System.out.println("Ticket validi usati: " + ticketMap.size());
+            Configuration.logger.info("Ticket validi scaricati da JIRA: " + ticketMap.size());
+            Configuration.logger.info("Ticket totali letti: " + totalTickets);
+            Configuration.logger.info("Scartati per FixVersion mancante: " + skippedNoFixVersion);
+            Configuration.logger.info("Scartati per FV senza releaseDate: " + skippedAllFVNoReleaseDate);
+            Configuration.logger.info("Ticket validi usati: " + ticketMap.size());
         }
 
         return ticketMap;

@@ -2,6 +2,8 @@ package analyzer.bugginess;
 
 import analyzer.jira.GetReleaseInfo;
 import analyzer.model.Release;
+import analyzer.util.Configuration;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +47,7 @@ public class ReleaseIndexMapper {
         List<Release> releases = GetReleaseInfo.getDatasetReleases();
         ReleaseIndexMapper mapper = new ReleaseIndexMapper(releases);
 
-        System.out.println("Mappatura release:");
+        Configuration.logger.info("Mappatura release:");
         for (Release r : releases) {
             int idx = mapper.getIndex(r.getName());
             System.out.printf("Release %s → Index %d\n", r.getName(), idx);

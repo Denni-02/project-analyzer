@@ -26,7 +26,7 @@ public class GetReleaseInfo {
         releaseNames.clear();
         releaseIDs.clear();
 
-        if (Configuration.BASIC_DEBUG) System.out.println("Recupero release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
+        if (Configuration.BASIC_DEBUG) Configuration.logger.info("Recupero release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
 
         // 1. Richiesta HTTP
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.PROJECT1_NAME;
@@ -52,8 +52,8 @@ public class GetReleaseInfo {
         List<LocalDateTime> selected = releases.subList(0, cutoff);
 
         if (Configuration.BASIC_DEBUG) {
-            System.out.println("Numero totale release: " + releases.size());
-            System.out.println("Release selezionate (33%): " + selected.size());
+            Configuration.logger.info("Numero totale release: " + releases.size());
+            Configuration.logger.info("Release selezionate (33%): " + selected.size());
         }
 
         // 5. Costruisci oggetti Release
@@ -100,7 +100,7 @@ public class GetReleaseInfo {
         releaseIDs.clear();
 
         if (Configuration.LABELING_DEBUG)
-            System.out.println("Recupero TUTTE le release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
+            Configuration.logger.info("Recupero TUTTE le release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
 
         // 1. Richiesta HTTP
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.PROJECT1_NAME;

@@ -32,12 +32,12 @@ public class ProportionEstimator {
     public void registerValidTicket(TicketInfo ticket) {
 
         if (ticket.getAffectedVersions().isEmpty()) {
-            if (Configuration.LABELING_DEBUG) System.out.println("SKIP registerValidTicket: ticket " + ticket.getId() + " ha AV vuote.");
+            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " ha AV vuote.");
             return;
         }
 
         if (ticket.getFixVersionName() == null) {
-            if (Configuration.LABELING_DEBUG) System.out.println("SKIP registerValidTicket: ticket " + ticket.getId() + " ha FV null.");
+            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " ha FV null.");
             return;
         }
 
@@ -48,7 +48,7 @@ public class ProportionEstimator {
                 .orElse(null);
 
         if (avName == null) {
-            if (Configuration.LABELING_DEBUG) System.out.println("SKIP registerValidTicket: ticket " + ticket.getId() + " nessuna AV valida trovata nel mapper → AVs: " + ticket.getAffectedVersions());
+            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " nessuna AV valida trovata nel mapper → AVs: " + ticket.getAffectedVersions());
             return;
         }
 
@@ -57,11 +57,11 @@ public class ProportionEstimator {
         int ovIdx = findClosestReleaseBefore(ticket.getOpeningVersion());
 
         if (fvIdx == -1 || ivIdx == -1 || ovIdx == -1) {
-            if (Configuration.LABELING_DEBUG) System.out.println("SKIP registerValidTicket: ticket " + ticket.getId() + " → fvIdx=" + fvIdx + " ivIdx=" + ivIdx + " ovIdx=" + ovIdx);
+            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " → fvIdx=" + fvIdx + " ivIdx=" + ivIdx + " ovIdx=" + ovIdx);
             return;
         }
 
-        if (Configuration.LABELING_DEBUG) System.out.println("Ticket REGISTRATO: " + ticket.getId() + " AV=" + avName + " FV=" + ticket.getFixVersionName());
+        if (Configuration.LABELING_DEBUG) Configuration.logger.info("Ticket REGISTRATO: " + ticket.getId() + " AV=" + avName + " FV=" + ticket.getFixVersionName());
         ticket.setInjectedVersion(ticket.getOpeningVersion());
         validTicketsWithAV.add(ticket);
     }
@@ -87,8 +87,8 @@ public class ProportionEstimator {
     }
 
     public String estimateIV(TicketInfo ticket) {
-        if (Configuration.LABELING_DEBUG) System.out.println("Estimo IV per ticket " + ticket.getId());
-        if (Configuration.LABELING_DEBUG) System.out.println("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
+        if (Configuration.LABELING_DEBUG) Configuration.logger.info("Estimo IV per ticket " + ticket.getId());
+        if (Configuration.LABELING_DEBUG) Configuration.logger.info("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
 
         String normalizedFV = normalizeVersionName(ticket.getFixVersionName());
         int fvIndex = mapper.getIndex(normalizedFV);
@@ -112,10 +112,10 @@ public class ProportionEstimator {
 
         if (Configuration.LABELING_DEBUG) {
             if (fvIndex == -1) {
-                System.out.println("Proportion SKIPPED: FixVersion non trovata → " + ticket.getFixVersionName());
+                Configuration.logger.info("Proportion SKIPPED: FixVersion non trovata → " + ticket.getFixVersionName());
             }
             if (ovIndex == -1) {
-                System.out.println("Proportion SKIPPED: OpeningVersion fuori range → " + ticket.getOpeningVersion());
+                Configuration.logger.info("Proportion SKIPPED: OpeningVersion fuori range → " + ticket.getOpeningVersion());
             }
         }
 
@@ -166,7 +166,7 @@ public class ProportionEstimator {
         }
 
         // 2️Poi stimiamo IV solo per quelli senza AV
-        System.out.println("Ticket con AV mancante:");
+        Configuration.logger.info("Ticket con AV mancante:");
         for (TicketInfo ticket : tickets.values()) {
             if (ticket.getAffectedVersions().isEmpty()) {
                 String estIV = estimator.estimateIV(ticket);
@@ -185,10 +185,8 @@ public class ProportionEstimator {
                 else skipped++;
             }
         }
-        System.out.println("Ticket proporzionabili: " + proportionable);
-        System.out.println("Ticket saltati: " + skipped);
+        Configuration.logger.info("Ticket proporzionabili: " + proportionable);
+        Configuration.logger.info("Ticket saltati: " + skipped);
     }
-
-
 
 }

@@ -1,5 +1,6 @@
 package ml.arff; // cambia con il package che hai creato
 
+import analyzer.util.Configuration;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 
@@ -12,14 +13,14 @@ public class TestWeka {
         Instances data = source.getDataSet();
 
         // Verifica e stampa quante istanze ci sono
-        System.out.println("Caricato dataset con " + data.numInstances() + " istanze.");
-        System.out.println("Numero di attributi: " + data.numAttributes());
+        Configuration.logger.info("Caricato dataset con " + data.numInstances() + " istanze.");
+        Configuration.logger.info("Numero di attributi: " + data.numAttributes());
 
         // (opzionale) stampa il nome della classe target se impostata
         if (data.classIndex() != -1) {
-            System.out.println("Classe target: " + data.classAttribute().name());
+            Configuration.logger.info("Classe target: " + data.classAttribute().name());
         } else {
-            System.out.println("Classe non impostata (classIndex = -1)");
+            Configuration.logger.info("Classe non impostata (classIndex = -1)");
         }
     }
 }

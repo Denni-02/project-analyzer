@@ -1,5 +1,7 @@
 package analyzer.util;
 
+import java.util.logging.Logger;
+
 public class Configuration {
     public static final boolean BASIC_DEBUG = true;
     public static final boolean LOGGER = false;
@@ -7,6 +9,8 @@ public class Configuration {
     public static final boolean TICKET_DEBUG = false;
     public static final boolean LABELING_DEBUG = false;
     public static final boolean ML_DEBUG = true;
+    public static final Logger logger = Logger.getLogger(Logger.class.getName());
+
 
     public static final String PROJECT1_PATH = "/home/denni/isw2/bookkeeper";
     public static final String OUTPUT_CSV1_PATH = "/home/denni/isw2/project-analyzer/csv_output/bookkeeper_output.csv";

@@ -2,6 +2,8 @@ package analyzer.csv;
 
 import analyzer.model.Commit;
 import analyzer.model.Release;
+import analyzer.util.Configuration;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -19,7 +21,7 @@ public class CsvDebugWriter {
                         c.getMessage().replace(";", " ")));
             }
         } catch (IOException e) {
-            System.out.println("Errore nella scrittura del CSV dei commit");
+            Configuration.logger.info("Errore nella scrittura del CSV dei commit");
             e.printStackTrace();
         }
     }
@@ -37,7 +39,7 @@ public class CsvDebugWriter {
                         selected.contains(r) ? "Y" : "N"));
             }
         } catch (IOException e) {
-            System.out.println("Errore nella scrittura del CSV delle release");
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
             e.printStackTrace();
         }
     }

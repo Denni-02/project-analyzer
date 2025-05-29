@@ -51,26 +51,26 @@ public class DatasetApp {
             //Struttura dati per commit
             List<Commit> selectedCommits = new ArrayList<>();
 
-            if (Configuration.BASIC_DEBUG) System.out.println("\nAnalisi delle metriche statiche avviata:");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nAnalisi delle metriche statiche avviata:");
 
             // Itera su ogni release valida
             for (Release rel : datasetReleases) {
 
                 if (Configuration.BASIC_DEBUG)
-                    System.out.println("\nAnalizzo release: " + rel.getName() + " (" + rel.getReleaseDate() + ")");
+                    Configuration.logger.info("\nAnalizzo release: " + rel.getName() + " (" + rel.getReleaseDate() + ")");
 
                 // Trova il commit più recente prima della data di release
                 RevCommit commit = repo.findLastCommitBefore(rel.getReleaseDate());
                 if (commit == null) {
-                    System.out.println("Nessun commit trovato prima della release " + rel.getName());
+                    Configuration.logger.info("Nessun commit trovato prima della release " + rel.getName());
                     continue;
                 }
 
                 if (Configuration.BASIC_DEBUG) {
-                    System.out.println(" Commit selezionato:");
-                    System.out.println(" → ID: " + commit.getId().getName());
-                    System.out.println(" → Data: " + commit.getAuthorIdent().getWhen());
-                    System.out.println(" → Messaggio: " + commit.getShortMessage());
+                    Configuration.logger.info(" Commit selezionato:");
+                    Configuration.logger.info(" → ID: " + commit.getId().getName());
+                    Configuration.logger.info(" → Data: " + commit.getAuthorIdent().getWhen());
+                    Configuration.logger.info(" → Messaggio: " + commit.getShortMessage());
                 }
 
                 Commit c = new Commit();
@@ -96,7 +96,7 @@ public class DatasetApp {
             repo.close();
             methods = extractor.getAnalyzedMethods();
 
-            if (Configuration.BASIC_DEBUG) System.out.println("\nInizio fase di etichettatura ...");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nInizio fase di etichettatura ...");
 
             // 1. Ticket da JIRA
             Map<String, TicketInfo> tickets = TicketParser.parseTicketsFromJira();
@@ -114,11 +114,11 @@ public class DatasetApp {
             CsvHandler csvHandler = new CsvHandler();
             csvHandler.writeCsv(Configuration.OUTPUT_CSV1_PATH, methods);
 
-            if (Configuration.BASIC_DEBUG) System.out.println("\nAnalisi completata. File salvato in: " + Configuration.OUTPUT_CSV1_PATH + "\n");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nAnalisi completata. File salvato in: " + Configuration.OUTPUT_CSV1_PATH + "\n");
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Errore durante l'esecuzione.");
+            Configuration.logger.info("Errore durante l'esecuzione.");
         }
     }
 }

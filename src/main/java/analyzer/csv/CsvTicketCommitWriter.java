@@ -1,6 +1,8 @@
 package analyzer.csv;
 
 import analyzer.model.TicketInfo;
+import analyzer.util.Configuration;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
@@ -23,9 +25,9 @@ public class CsvTicketCommitWriter {
                 }
             }
 
-            System.out.println("Debug CSV creato: " + path);
+            Configuration.logger.info("Debug CSV creato: " + path);
         } catch (IOException e) {
-            System.out.println("Errore nella scrittura del CSV dei commit per ticket");
+            Configuration.logger.info("Errore nella scrittura del CSV dei commit per ticket");
             e.printStackTrace();
         }
     }

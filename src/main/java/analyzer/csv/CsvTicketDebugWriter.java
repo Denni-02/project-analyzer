@@ -1,6 +1,8 @@
 package analyzer.csv;
 
 import analyzer.model.TicketInfo;
+import analyzer.util.Configuration;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
@@ -24,10 +26,10 @@ public class CsvTicketDebugWriter {
 
             }
 
-            System.out.println("File CSV ticket salvato in: " + outputPath);
+            Configuration.logger.info("File CSV ticket salvato in: " + outputPath);
 
         } catch (IOException e) {
-            System.out.println("Errore nella scrittura del file CSV dei ticket.");
+            Configuration.logger.info("Errore nella scrittura del file CSV dei ticket.");
             e.printStackTrace();
         }
     }

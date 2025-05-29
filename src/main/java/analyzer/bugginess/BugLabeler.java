@@ -7,7 +7,6 @@ import analyzer.model.TicketInfo;
 import analyzer.model.Release;
 import analyzer.util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
-
 import java.util.*;
 
 public class BugLabeler {
@@ -49,8 +48,8 @@ public class BugLabeler {
                 buggyReleases = new HashSet<>();
 
                 if (Configuration.LABELING_DEBUG) {
-                    System.out.println("Ticket " + ticket.getId() + " NON ha AV → provo stima IV");
-                    System.out.println("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
+                    Configuration.logger.info("Ticket " + ticket.getId() + " NON ha AV → provo stima IV");
+                    Configuration.logger.info("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
                 }
 
                 String estIV = estimator.estimateIV(ticket);
@@ -58,9 +57,9 @@ public class BugLabeler {
 
                 if (Configuration.LABELING_DEBUG) {
                     if (estIV == null) {
-                        System.out.println("Ticket " + ticket.getId() + ": stima IV fallita.");
+                        Configuration.logger.info("Ticket " + ticket.getId() + ": stima IV fallita.");
                     } else {
-                        System.out.println("Ticket " + ticket.getId() + ": stima IV riuscita → " + estIV);
+                        Configuration.logger.info("Ticket " + ticket.getId() + ": stima IV riuscita → " + estIV);
                     }
                 }
 
@@ -78,7 +77,7 @@ public class BugLabeler {
             }
 
             if (Configuration.LABELING_DEBUG)
-                System.out.println("Ticket " + ticket.getId() + ": buggyReleases stimate → " + buggyReleases);
+                Configuration.logger.info("Ticket " + ticket.getId() + ": buggyReleases stimate → " + buggyReleases);
 
             if (buggyReleases.isEmpty()) continue;
 
@@ -119,10 +118,10 @@ public class BugLabeler {
                         Set<MethodInfo> touched = analyzer.getTouchedMethods(commit, filePath, candidates);
 
                         if (touched.isEmpty() && Configuration.LABELING_DEBUG) {
-                            System.out.println("⚠️ Commit " + commit.getName() +
+                            Configuration.logger.info("⚠️ Commit " + commit.getName() +
                                     " su file " + filePath +
                                     " @ " + releaseId + " NON tocca metodi metricati.");
-                            System.out.println("   → File toccato, metodi candidati: " + candidates.size());
+                            Configuration.logger.info("   → File toccato, metodi candidati: " + candidates.size());
                         }
 
                         for (MethodInfo m : touched) {
@@ -148,10 +147,10 @@ public class BugLabeler {
             }
 
             if (Configuration.LABELING_DEBUG) {
-                System.out.println("\nSTATISTICHE FINE ETICHETTATURA:");
-                System.out.println("→ Metodi etichettati buggy grazie ad AV: " + buggyFromAV);
-                System.out.println("→ Metodi etichettati buggy grazie a Proportion: " + buggyFromProportion);
-                System.out.println("→ Totale etichettati buggy: " + (buggyFromAV + buggyFromProportion));
+                Configuration.logger.info("\nSTATISTICHE FINE ETICHETTATURA:");
+                Configuration.logger.info("→ Metodi etichettati buggy grazie ad AV: " + buggyFromAV);
+                Configuration.logger.info("→ Metodi etichettati buggy grazie a Proportion: " + buggyFromProportion);
+                Configuration.logger.info("→ Totale etichettati buggy: " + (buggyFromAV + buggyFromProportion));
             }
 
         }

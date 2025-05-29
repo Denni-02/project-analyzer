@@ -98,7 +98,7 @@ public final class GitRepository {
 
     // Esegue il checkout al commit indicato
     public void checkoutCommit(RevCommit commit) throws GitAPIException {
-        if (Configuration.BASIC_DEBUG) System.out.println("Eseguo checkout al commit: " + commit.getName());
+        if (Configuration.BASIC_DEBUG) Configuration.logger.info("Eseguo checkout al commit: " + commit.getName());
         git.checkout().setName(commit.getName()).call();
     }
 

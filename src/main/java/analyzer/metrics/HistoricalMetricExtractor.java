@@ -33,7 +33,7 @@ public class HistoricalMetricExtractor {
 
         for (String filePath : methodsByFile.keySet()) {
 
-            if (Configuration.HISTORY_DEBUG) System.out.println("Analizzo storico file: " + filePath);
+            if (Configuration.HISTORY_DEBUG) Configuration.logger.info("Analizzo storico file: " + filePath);
 
             List<MethodInfo> methodList = methodsByFile.get(filePath);
 
@@ -47,7 +47,7 @@ public class HistoricalMetricExtractor {
 
                 for (RevCommit commit : commits) {
                     if (commit.getParentCount() == 0) {
-                        if (Configuration.HISTORY_DEBUG) System.out.println("Skip root commit: " + commit.getName());
+                        if (Configuration.HISTORY_DEBUG) Configuration.logger.info("Skip root commit: " + commit.getName());
                         continue;
                     }
                     RevCommit parent = repo.parseCommit(commit);
@@ -103,7 +103,7 @@ public class HistoricalMetricExtractor {
             List<DiffEntry> diffs = df.scan(parent.getTree(), current.getTree());
 
             if (Configuration.HISTORY_DEBUG)
-                System.out.println("Analizzo diff tra commit " + parent.getName() + " → " + current.getName());
+                Configuration.logger.info("Analizzo diff tra commit " + parent.getName() + " → " + current.getName());
 
             for (DiffEntry diff : diffs) {
                 if (!diff.getNewPath().equals(filePath)) continue;
