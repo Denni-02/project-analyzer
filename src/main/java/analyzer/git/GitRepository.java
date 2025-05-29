@@ -34,18 +34,22 @@ public final class GitRepository {
         return this.git;
     }
 
-    public List<RevCommit> getCommitsBetweenDates(LocalDate from, LocalDate to) throws Exception {
-        Iterable<RevCommit> allCommits = this.getGit().log().call();
-        List<RevCommit> filtered = new ArrayList<>();
-
-        for (RevCommit commit : allCommits) {
-            LocalDate date = commit.getAuthorIdent().getWhen().toInstant()
-                    .atZone(ZoneId.systemDefault()).toLocalDate();
-            if (!date.isBefore(from) && !date.isAfter(to)) {
-                filtered.add(commit);
+    public List<RevCommit> getCommitsBetweenDates(LocalDate from, LocalDate to) throws GitOperationException {
+        try {
+            Iterable<RevCommit> allCommits = this.getGit().log().call();
+            List<RevCommit> filtered = new ArrayList<>();
+            for (RevCommit commit : allCommits) {
+                LocalDate date = commit.getAuthorIdent().getWhen().toInstant()
+                        .atZone(ZoneId.systemDefault()).toLocalDate();
+                if (!date.isBefore(from) && !date.isAfter(to)) {
+                    filtered.add(commit);
+                }
             }
+            return filtered;
+        } catch (Exception e) {
+            throw new GitOperationException("Errore durante il filtraggio dei commit per intervallo di date.", e);
         }
-        return filtered;
+
     }
 
     public boolean isAuthorInTicket(RevCommit commit, TicketInfo ticket) {
@@ -65,11 +69,16 @@ public final class GitRepository {
         return false;
     }
 
-    public Iterable<RevCommit> getCommitsByMessageContaining(String keyword) throws Exception {
-        return git.log()
-                .setRevFilter(MessageRevFilter.create(keyword))
-                .call();
+    public Iterable<RevCommit> getCommitsByMessageContaining(String keyword) throws GitOperationException {
+        try {
+            return git.log()
+                    .setRevFilter(MessageRevFilter.create(keyword))
+                    .call();
+        } catch (Exception e) {
+            throw new GitOperationException("Errore durante il recupero dei commit con messaggi contenenti '" + keyword + "'", e);
+        }
     }
+
 
     // Trova l'ultimo commit prima della data di una release
     public RevCommit findLastCommitBefore(LocalDate releaseDate) throws IOException {
@@ -107,23 +116,28 @@ public final class GitRepository {
         git.close();
     }
 
-    public Iterable<RevCommit> getCommitsTouchingFileBefore(String filePath, LocalDate releaseDate) throws Exception {
-        return git.log()
-                .addPath(filePath)
-                .setRevFilter(CommitTimeRevFilter.before(java.sql.Date.valueOf(releaseDate)))
-                .call();
+    public Iterable<RevCommit> getCommitsTouchingFileBefore(String filePath, LocalDate releaseDate) throws GitOperationException {
+        try {
+            return git.log()
+                    .addPath(filePath)
+                    .setRevFilter(CommitTimeRevFilter.before(java.sql.Date.valueOf(releaseDate)))
+                    .call();
+        } catch (Exception e) {
+            throw new GitOperationException("Errore nel recupero dei commit che toccano il file prima della release: " + filePath, e);
+        }
     }
+
 
     public RevCommit parseCommit(RevCommit commit) throws IOException {
         return repo.parseCommit(commit.getParent(0));
     }
 
-    public Set<String> getTouchedJavaFiles(RevCommit commit) throws Exception {
+    public Set<String> getTouchedJavaFiles(RevCommit commit) throws GitOperationException, IOException {
         Set<String> javaFiles = new HashSet<>();
-
         if (commit.getParentCount() == 0) return javaFiles; // Salta root commit
 
         RevCommit parent = parseCommit(commit);
+
         try (DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE)) {
             df.setRepository(repo);
             df.setDetectRenames(true);
@@ -135,10 +149,14 @@ public final class GitRepository {
                     javaFiles.add(path);
                 }
             }
+
+        } catch (Exception e) {
+            throw new GitOperationException("Errore nel calcolo dei file .java toccati dal commit " + commit.getName(), e);
         }
 
         return javaFiles;
     }
+
 
 }
 

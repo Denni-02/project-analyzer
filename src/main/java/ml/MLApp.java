@@ -15,6 +15,22 @@ import java.util.logging.Level;
 public class MLApp {
 
     private static final String RESULT_LABEL = "Risultato:";
+    private static final String RESULT_FORMAT = "%s %s";
+
+    private static void evaluateAndLog(String name, Classifier classifier, Instances data) throws Exception {
+        if (Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) {
+            Configuration.logger.info("\nValutazione " + name + " in corso...");
+        }
+
+        EvaluationResult result = ClassifierEvaluator.evaluateClassifier(
+                name, classifier, data, 42, 10, 10
+        );
+
+        if (Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) {
+            Configuration.logger.info(String.format(RESULT_FORMAT, RESULT_LABEL, result));
+        }
+    }
+
 
     public static void main(String[] args) {
 
@@ -43,34 +59,9 @@ public class MLApp {
                 Configuration.logger.info("   - Valori possibili: " + data.classAttribute());
             }
 
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione NaiveBayes in corso...");
-
-            Classifier naive = ClassifierFactory.getNaiveBayes();
-            EvaluationResult nbResult = ClassifierEvaluator.evaluateClassifier(
-                    "NaiveBayes", naive, data, 42, 10, 10
-            );
-
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, nbResult));
-
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione IBk in corso...");
-
-            Classifier ibk = ClassifierFactory.getIBk();
-            EvaluationResult ibkResult = ClassifierEvaluator.evaluateClassifier(
-                    "IBk", ibk, data, 42, 10, 10
-            );
-
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, ibkResult));
-
-
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("\nValutazione Random Forest in corso...");
-
-            Classifier randomForest = ClassifierFactory.getRandomForest();
-            EvaluationResult rfResult = ClassifierEvaluator.evaluateClassifier(
-                    "RandomForest", randomForest, data, 42, 10, 10
-            );
-
-            if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info(String.format("%s %s", RESULT_LABEL, rfResult));
-
+            evaluateAndLog("NaiveBayes", ClassifierFactory.getNaiveBayes(), data);
+            evaluateAndLog("IBk", ClassifierFactory.getIBk(), data);
+            evaluateAndLog("RandomForest", ClassifierFactory.getRandomForest(), data);
 
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore in MLApp", e);

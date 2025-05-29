@@ -29,7 +29,9 @@ public class MethodInfo {
     private int returnTypeComplexity;
     private int localVariableCount;
 
-    public MethodInfo() {}
+    public MethodInfo() {
+        // Basic constructor
+    }
 
     public int getStatementCount() { return statementCount; }
     public void setStatementCount(int statementCount) { this.statementCount = statementCount; }

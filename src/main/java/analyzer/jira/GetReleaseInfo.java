@@ -11,14 +11,21 @@ import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
+
 import analyzer.util.Configuration;
 
 public class GetReleaseInfo {
 
-
     private static final ArrayList<LocalDateTime> releases = new ArrayList<>();
     private static final HashMap<LocalDateTime, String> releaseNames = new HashMap<>();
     private static final HashMap<LocalDateTime, String> releaseIDs = new HashMap<>();
+    private static final String RELEASE_DATE_STRING = "releaseDate";
+    private static final String RELEASE_STRING = "released" ;
+
+    private GetReleaseInfo(){
+        // Prevent instantiation
+    }
 
     // Ottiene la lista di release (primo 33%) dal progetto JIRA
     public static List<Release> getDatasetReleases() throws IOException, JSONException {
@@ -36,8 +43,8 @@ public class GetReleaseInfo {
         // 2. Parsing delle versioni
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
-            if (version.has("releaseDate") && version.has("released") && version.getBoolean("released")) {
-                String dateStr = version.getString("releaseDate");
+            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
+                String dateStr = version.getString(RELEASE_DATE_STRING);
                 String name = version.optString("name", "unknown");
                 String id = version.optString("id", "0");
                 addRelease(dateStr, name, id);
@@ -51,7 +58,7 @@ public class GetReleaseInfo {
         int cutoff = (int) Math.ceil(releases.size() * 0.33);
         List<LocalDateTime> selected = releases.subList(0, cutoff);
 
-        if (Configuration.BASIC_DEBUG) {
+        if (Configuration.BASIC_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
             Configuration.logger.info("Numero totale release: " + releases.size());
             Configuration.logger.info("Release selezionate (33%): " + selected.size());
         }
@@ -110,8 +117,8 @@ public class GetReleaseInfo {
         // 2. Parsing delle versioni
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
-            if (version.has("releaseDate") && version.has("released") && version.getBoolean("released")) {
-                String dateStr = version.getString("releaseDate");
+            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
+                String dateStr = version.getString(RELEASE_DATE_STRING);
                 String name = version.optString("name", "unknown");
                 String id = version.optString("id", "0");
                 addRelease(dateStr, name, id);

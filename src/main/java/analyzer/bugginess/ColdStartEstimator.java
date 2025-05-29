@@ -3,10 +3,17 @@ package analyzer.bugginess;
 import analyzer.jira.TicketParser;
 import analyzer.model.TicketInfo;
 import analyzer.model.Release;
+import analyzer.util.Configuration;
+
 import java.time.LocalDate;
 import java.util.*;
+import java.util.logging.Level;
 
 public class ColdStartEstimator {
+
+    private ColdStartEstimator(){
+        // Prevent instantation
+    }
 
     private static final String[] PROJECTS = {"AVRO", "OPENJPA", "ZOOKEEPER", "SYNCOPE", "TAJO"};
 
@@ -39,8 +46,7 @@ public class ColdStartEstimator {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Errore analizzando il progetto " + project);
-                e.printStackTrace();
+                Configuration.logger.log(Level.SEVERE, String.format("Errore analizzando il progetto %s", project), e);
             }
         }
 

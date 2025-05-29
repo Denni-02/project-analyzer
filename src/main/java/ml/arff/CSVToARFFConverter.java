@@ -6,6 +6,7 @@ import weka.core.converters.CSVLoader;
 import weka.core.converters.ArffSaver;
 
 import java.io.File;
+import java.util.logging.Level;
 
 public class CSVToARFFConverter {
 
@@ -28,6 +29,6 @@ public class CSVToARFFConverter {
         saver.setFile(new File(arffPath));              // imposta il file di output
         saver.writeBatch();                             // esegue il salvataggio
 
-        Configuration.logger.info(String.format("Conversione completata: path = %s", arffPath));
+        if(Configuration.logger.isLoggable(Level.INFO)) Configuration.logger.info(String.format("Conversione completata: path = %s", arffPath));
     }
 }

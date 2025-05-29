@@ -1,7 +1,5 @@
 package analyzer.bugginess;
 
-import analyzer.jira.GetReleaseInfo;
-import analyzer.jira.TicketParser;
 import analyzer.model.Release;
 import analyzer.model.TicketInfo;
 import analyzer.util.Configuration;
@@ -54,11 +52,9 @@ public class ProportionEstimator {
         int ovIdx = findClosestReleaseBefore(ticket.getOpeningVersion());
 
         if (fvIdx == -1 || ivIdx == -1 || ovIdx == -1) {
-            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " → fvIdx=" + fvIdx + " ivIdx=" + ivIdx + " ovIdx=" + ovIdx);
             return;
         }
 
-        if (Configuration.LABELING_DEBUG) Configuration.logger.info("Ticket REGISTRATO: " + ticket.getId() + " AV=" + avName + " FV=" + ticket.getFixVersionName());
         ticket.setInjectedVersion(ticket.getOpeningVersion());
         validTicketsWithAV.add(ticket);
     }
