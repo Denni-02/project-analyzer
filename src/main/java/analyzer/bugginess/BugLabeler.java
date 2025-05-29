@@ -65,30 +65,32 @@ public class BugLabeler {
         // 5. Per ogni ticket...
         for (TicketInfo ticket : tickets.values()) {
 
-            // Validazione minima: ci serve almeno una FV e un commit
-            if (ticket.getFixVersion() == null || ticket.getCommitIds().isEmpty()) continue;
-
             Set<String> buggyReleases = estimateBuggyReleases(ticket, estimator);
 
-            if (Configuration.LABELING_DEBUG)
+            if (!isProcessable(ticket, buggyReleases, methods)) {
+                if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
+                    Configuration.logger.info(String.format("%s%s: ticket ignorato (non processabile)", TICKET_PREFIX, ticket.getId()));
+                }
+                continue;
+            }
+
+            if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
                 Configuration.logger.info(String.format("%s%s: buggyReleases stimate → %s", TICKET_PREFIX, ticket.getId(), buggyReleases));
-
-            if (buggyReleases.isEmpty()) continue;
-
-            if (!filterValidBuggyReleases(ticket, buggyReleases, methods)) continue;
+            }
 
             int[] result = processTicketCommits(ticket, repo, buggyReleases, methodsByFileAndRelease, analyzer, debugRows);
             buggyFromAV += result[0];
             buggyFromProportion += result[1];
 
-            if (Configuration.LABELING_DEBUG) {
+            if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
                 Configuration.logger.info("STATISTICHE FINE ETICHETTATURA:");
-                Configuration.logger.info("→ Metodi etichettati buggy grazie ad AV: " + buggyFromAV);
-                Configuration.logger.info("→ Metodi etichettati buggy grazie a Proportion: " + buggyFromProportion);
-                Configuration.logger.info("→ Totale etichettati buggy: " + (buggyFromAV + buggyFromProportion));
+                Configuration.logger.info(String.format(
+                        "→ Etichettati AV: %d | Proportion: %d | Totale: %d",
+                        buggyFromAV, buggyFromProportion, buggyFromAV + buggyFromProportion
+                ));
             }
-
         }
+
 
         // 8. CSV di debug opzionale
         if (Configuration.LABELING_DEBUG) {
@@ -98,6 +100,13 @@ public class BugLabeler {
             );
         }
     }
+
+    private static boolean isProcessable(TicketInfo ticket, Set<String> buggyReleases, List<MethodInfo> methods) {
+        if (ticket.getFixVersion() == null || ticket.getCommitIds().isEmpty()) return false;
+        if (buggyReleases.isEmpty()) return false;
+        return filterValidBuggyReleases(ticket, buggyReleases, methods);
+    }
+
 
     private static Set<String> estimateBuggyReleases(TicketInfo ticket, ProportionEstimator estimator) {
         Set<String> buggyReleases = new HashSet<>();
