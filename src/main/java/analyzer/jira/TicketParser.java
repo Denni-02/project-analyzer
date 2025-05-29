@@ -1,12 +1,14 @@
 package analyzer.jira;
 
 import analyzer.csv.CsvTicketDebugWriter;
+import analyzer.exception.JsonDownloadException;
 import analyzer.model.Release;
 import analyzer.model.TicketInfo;
 import analyzer.util.Configuration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.net.URL;
@@ -19,7 +21,6 @@ public class TicketParser {
     public static Map<String, TicketInfo> parseTicketsFromJira() throws Exception {
         int totalTickets = 0;
         int skippedNoFixVersion = 0;
-        int skippedAllFVNoReleaseDate = 0;
 
         Map<String, TicketInfo> ticketMap = new HashMap<>();
         int startAt = 0;
@@ -48,11 +49,7 @@ public class TicketParser {
 
                 JSONArray fixVersions = fields.getJSONArray("fixVersions");
                 skippedNoFixVersion++;
-                if(Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " SCARTATO: nessuna Fix Version");
-
                 if (fixVersions.length() == 0) {
-                    if (Configuration.TICKET_DEBUG)
-                        Configuration.logger.info("Ticket " + key + " scartato: nessuna Fix Version");
                     continue;
                 }
 
@@ -79,11 +76,7 @@ public class TicketParser {
                     }
                 }
 
-                skippedAllFVNoReleaseDate++;
-                if(Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " SCARTATO: tutte le FV sono senza releaseDate");
-
                 if (earliestFVDate == null) {
-                    if (Configuration.TICKET_DEBUG) Configuration.logger.info("Ticket " + key + " scartato: tutte le FV sono senza releaseDate");
                     continue;
                 }
 
@@ -102,40 +95,31 @@ public class TicketParser {
 
                 ticketMap.put(key, ticket);
 
-                if (Configuration.TICKET_DEBUG) {
-                    Configuration.logger.info("Ticket " + key +
-                            ": OV=" + createdDate +
-                            ", FV=" + ticket.getFixVersionName() +
-                            ", AVs=" + ticket.getAffectedVersions() +
-                            ", All FVs=" + ticket.getFixVersionNames());
-                }
             }
 
             startAt += maxResults;
         }
 
-        if(Configuration.TICKET_DEBUG) {
-            Configuration.logger.info("Ticket validi scaricati da JIRA: " + ticketMap.size());
-            Configuration.logger.info("Ticket totali letti: " + totalTickets);
-            Configuration.logger.info("Scartati per FixVersion mancante: " + skippedNoFixVersion);
-            Configuration.logger.info("Scartati per FV senza releaseDate: " + skippedAllFVNoReleaseDate);
-            Configuration.logger.info("Ticket validi usati: " + ticketMap.size());
-        }
-
         return ticketMap;
     }
 
-    private static JSONObject readJsonFromUrl(String url) throws Exception {
-        InputStream is = new URL(url).openStream();
-        try (BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+    private static JSONObject readJsonFromUrl(String url) throws JsonDownloadException {
+        try (InputStream is = new URL(url).openStream();
+             BufferedReader rd = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+
             StringBuilder sb = new StringBuilder();
             int cp;
             while ((cp = rd.read()) != -1) {
                 sb.append((char) cp);
             }
+
             return new JSONObject(sb.toString());
+
+        } catch (RuntimeException | IOException e) {
+            throw new JsonDownloadException("Errore nel download o parsing del JSON da URL: " + url, e);
         }
     }
+
 
     public static Map<String, TicketInfo> parseTicketsFromProject(String projectKey) throws Exception {
         Map<String, TicketInfo> ticketMap = new HashMap<>();
