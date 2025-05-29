@@ -2,6 +2,7 @@ package analyzer.bugginess;
 
 import analyzer.model.MethodInfo;
 import analyzer.git.GitRepository;
+import analyzer.util.Configuration;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;
@@ -55,7 +56,7 @@ public class MethodTouchAnalyzer {
 
             }
         } catch (Exception e) {
-            System.err.println("Errore in getTouchedMethods() per commit " + commit.getName());
+            Configuration.logger.severe(String.format("Errore in getTouchedMethods() per commit %s", commit.getName()));
             e.printStackTrace();
         }
 

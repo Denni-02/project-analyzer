@@ -32,12 +32,10 @@ public class ProportionEstimator {
     public void registerValidTicket(TicketInfo ticket) {
 
         if (ticket.getAffectedVersions().isEmpty()) {
-            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " ha AV vuote.");
             return;
         }
 
         if (ticket.getFixVersionName() == null) {
-            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " ha FV null.");
             return;
         }
 
@@ -48,7 +46,6 @@ public class ProportionEstimator {
                 .orElse(null);
 
         if (avName == null) {
-            if (Configuration.LABELING_DEBUG) Configuration.logger.info("SKIP registerValidTicket: ticket " + ticket.getId() + " nessuna AV valida trovata nel mapper → AVs: " + ticket.getAffectedVersions());
             return;
         }
 
@@ -76,7 +73,7 @@ public class ProportionEstimator {
             int ov = findClosestReleaseBefore(t.getOpeningVersion());
 
             if (fv == ov) {
-                sum += (double) (fv - iv);
+                sum += fv - iv;
             } else {
                 sum += (double) (fv - iv) / (fv - ov);
             }
@@ -96,13 +93,13 @@ public class ProportionEstimator {
         int ovIndex = findClosestReleaseBefore(ticket.getOpeningVersion());
         if (ovIndex == -1) return null;
 
-        double P = (validTicketsWithAV.size() >= MIN_VALID_TICKETS) ? computeIncrementalP() : coldStartP;
+        double p = (validTicketsWithAV.size() >= MIN_VALID_TICKETS) ? computeIncrementalP() : coldStartP;
 
         int ivIndex;
         if (fvIndex == ovIndex) {
-            ivIndex = (int) Math.round(fvIndex - P);
+            ivIndex = (int) Math.round(fvIndex - p);
         } else {
-            ivIndex = (int) Math.round(fvIndex - ((fvIndex - ovIndex) * P));
+            ivIndex = (int) Math.round(fvIndex - ((fvIndex - ovIndex) * p));
         }
 
         ivIndex = Math.max(0, ivIndex);
@@ -150,43 +147,6 @@ public class ProportionEstimator {
 
     public ReleaseIndexMapper getMapper() {
         return mapper;
-    }
-
-    public static void main(String[] args) throws Exception {
-        List<Release> releases = GetReleaseInfo.getDatasetReleases();
-        Map<String, TicketInfo> tickets = TicketParser.parseTicketsFromJira();
-
-        ProportionEstimator estimator = new ProportionEstimator(releases);
-
-        // 1Prima registriamo i ticket con AV (da usare per stima incrementale di P)
-        for (TicketInfo ticket : tickets.values()) {
-            if (!ticket.getAffectedVersions().isEmpty()) {
-                estimator.registerValidTicket(ticket);
-            }
-        }
-
-        // 2️Poi stimiamo IV solo per quelli senza AV
-        Configuration.logger.info("Ticket con AV mancante:");
-        for (TicketInfo ticket : tickets.values()) {
-            if (ticket.getAffectedVersions().isEmpty()) {
-                String estIV = estimator.estimateIV(ticket);
-                System.out.printf("Ticket %s → stimata IV: %s (FV: %s, OV: %s)\n",
-                        ticket.getId(), estIV, ticket.getFixVersionName(), ticket.getOpeningVersion());
-            }
-        }
-
-        int proportionable = 0;
-        int skipped = 0;
-
-        for (TicketInfo ticket : tickets.values()) {
-            if (ticket.getAffectedVersions().isEmpty()) {
-                String iv = estimator.estimateIV(ticket);
-                if (iv != null) proportionable++;
-                else skipped++;
-            }
-        }
-        Configuration.logger.info("Ticket proporzionabili: " + proportionable);
-        Configuration.logger.info("Ticket saltati: " + skipped);
     }
 
 }

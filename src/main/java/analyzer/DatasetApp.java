@@ -51,13 +51,13 @@ public class DatasetApp {
             //Struttura dati per commit
             List<Commit> selectedCommits = new ArrayList<>();
 
-            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nAnalisi delle metriche statiche avviata:");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi delle metriche statiche avviata:");
 
             // Itera su ogni release valida
             for (Release rel : datasetReleases) {
 
                 if (Configuration.BASIC_DEBUG)
-                    Configuration.logger.info("\nAnalizzo release: " + rel.getName() + " (" + rel.getReleaseDate() + ")");
+                    Configuration.logger.info("Analizzo release: " + rel.getName() + " (" + rel.getReleaseDate() + ")");
 
                 // Trova il commit più recente prima della data di release
                 RevCommit commit = repo.findLastCommitBefore(rel.getReleaseDate());
@@ -96,7 +96,7 @@ public class DatasetApp {
             repo.close();
             methods = extractor.getAnalyzedMethods();
 
-            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nInizio fase di etichettatura ...");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("Inizio fase di etichettatura ...");
 
             // 1. Ticket da JIRA
             Map<String, TicketInfo> tickets = TicketParser.parseTicketsFromJira();
@@ -114,7 +114,7 @@ public class DatasetApp {
             CsvHandler csvHandler = new CsvHandler();
             csvHandler.writeCsv(Configuration.OUTPUT_CSV1_PATH, methods);
 
-            if (Configuration.BASIC_DEBUG) Configuration.logger.info("\nAnalisi completata. File salvato in: " + Configuration.OUTPUT_CSV1_PATH + "\n");
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi completata. File salvato in: " + Configuration.OUTPUT_CSV1_PATH);
 
         } catch (Exception e) {
             e.printStackTrace();

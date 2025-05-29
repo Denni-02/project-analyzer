@@ -115,7 +115,6 @@ public class BugLabeler {
         return filterValidBuggyReleases(ticket, buggyReleases, methods);
     }
 
-
     private static Set<String> estimateBuggyReleases(TicketInfo ticket, ProportionEstimator estimator) {
         Set<String> buggyReleases = new HashSet<>();
 
@@ -134,7 +133,6 @@ public class BugLabeler {
 
         return buggyReleases;
     }
-
 
     private static void logNoAV(TicketInfo ticket) {
         if (Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
@@ -168,7 +166,6 @@ public class BugLabeler {
 
         return releases;
     }
-
 
     private static boolean filterValidBuggyReleases(TicketInfo ticket, Set<String> buggyReleases, List<MethodInfo> methods) {
         Set<String> availableReleases = new HashSet<>();
@@ -211,12 +208,6 @@ public class BugLabeler {
                     List<MethodInfo> candidates = methodsByFileAndRelease.get(key);
                     Set<MethodInfo> touched = analyzer.getTouchedMethods(commit, filePath, candidates);
 
-                    if (touched.isEmpty() && Configuration.LABELING_DEBUG && Configuration.logger.isLoggable(Level.INFO)) {
-                        Configuration.logger.info(String.format("Commit %s su file %s @ %s NON tocca metodi metricati.",
-                                commit.getName(), filePath, releaseId));
-                        Configuration.logger.info(String.format("   → File toccato, metodi candidati: %d", candidates.size()));
-                    }
-
                     processTouchedMethods(touched, ticket, commit, debugRows, counters);
                 }
             }
@@ -224,8 +215,6 @@ public class BugLabeler {
 
         return counters;
     }
-
-
 
     private static RevCommit resolveCommit(String commitHash, GitRepository repo) {
         try {
@@ -265,6 +254,5 @@ public class BugLabeler {
             }
         }
     }
-
 
 }

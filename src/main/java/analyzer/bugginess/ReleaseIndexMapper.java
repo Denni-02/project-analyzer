@@ -43,15 +43,4 @@ public class ReleaseIndexMapper {
         return name;
     }
 
-    public static void main(String[] args) throws Exception {
-        List<Release> releases = GetReleaseInfo.getDatasetReleases();
-        ReleaseIndexMapper mapper = new ReleaseIndexMapper(releases);
-
-        Configuration.logger.info("Mappatura release:");
-        for (Release r : releases) {
-            int idx = mapper.getIndex(r.getName());
-            System.out.printf("Release %s → Index %d\n", r.getName(), idx);
-        }
-    }
-
 }
