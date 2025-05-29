@@ -2,6 +2,7 @@ package analyzer.jira;
 
 import analyzer.csv.CsvTicketDebugWriter;
 import analyzer.exception.JiraParsingException;
+import analyzer.exception.JiraReleaseException;
 import analyzer.exception.JsonDownloadException;
 import analyzer.model.Release;
 import analyzer.model.TicketInfo;
@@ -19,13 +20,11 @@ import java.util.*;
 
 public class TicketParser {
 
-    private final static String RELEASE_DATE_STRING = "releaseDate";
-    private final static String VERSIONS_STRING = "versions";
+    private static final String RELEASE_DATE_STRING = "releaseDate";
+    private static final String VERSIONS_STRING = "versions";
 
     public static Map<String, TicketInfo> parseTicketsFromJira() throws JiraParsingException {
         try {
-            int totalTickets = 0;
-            int skippedNoFixVersion = 0;
             Map<String, TicketInfo> ticketMap = new HashMap<>();
 
             int startAt = 0;
@@ -42,11 +41,9 @@ public class TicketParser {
 
                 for (int i = 0; i < issues.length(); i++) {
                     JSONObject issue = issues.getJSONObject(i);
-                    totalTickets++;
 
                     TicketInfo ticket = parseSingleTicket(issue);
                     if (ticket == null) {
-                        skippedNoFixVersion++;
                         continue;
                     }
 
@@ -67,25 +64,35 @@ public class TicketParser {
     private static TicketInfo parseSingleTicket(JSONObject issue) {
         String key = issue.getString("key");
         JSONObject fields = issue.getJSONObject("fields");
-        String createdStr = fields.getString("created").substring(0, 10);
-        LocalDate createdDate = LocalDate.parse(createdStr);
-        JSONArray fixVersions = fields.getJSONArray("fixVersions");
 
+        LocalDate createdDate = LocalDate.parse(fields.getString("created").substring(0, 10));
+        JSONArray fixVersions = fields.getJSONArray("fixVersions");
         if (fixVersions.length() == 0) return null;
 
         TicketInfo ticket = new TicketInfo(key);
         ticket.setOpeningVersion(createdDate);
 
-        // Fase A: Fix Versions
+        String earliestFVName = parseFixVersions(ticket, fixVersions);
+        if (earliestFVName == null) return null;
+
+        JSONArray affectedVersions = fields.optJSONArray("versions");
+        parseAffectedVersions(ticket, affectedVersions);
+
+        return ticket;
+    }
+
+
+    private static String parseFixVersions(TicketInfo ticket, JSONArray fixVersions) {
         LocalDate earliestFVDate = null;
         String earliestFVName = null;
 
         for (int j = 0; j < fixVersions.length(); j++) {
             JSONObject fv = fixVersions.getJSONObject(j);
-            if (fv.has(RELEASE_DATE_STRING) && fv.has("name")) {
+            if (fv.has("releaseDate") && fv.has("name")) {
                 String fvName = fv.getString("name");
-                LocalDate fvDate = LocalDate.parse(fv.getString(RELEASE_DATE_STRING));
+                LocalDate fvDate = LocalDate.parse(fv.getString("releaseDate"));
                 ticket.addFixVersion(fvName, fvDate);
+
                 if (earliestFVDate == null || fvDate.isBefore(earliestFVDate)) {
                     earliestFVDate = fvDate;
                     earliestFVName = fvName;
@@ -93,24 +100,25 @@ public class TicketParser {
             }
         }
 
-        if (earliestFVDate == null) return null;
-
-        ticket.setFixVersion(earliestFVDate);
-        ticket.setFixVersionName(earliestFVName);
-
-        // Fase B: Affected Versions
-        JSONArray affectedVersions = fields.optJSONArray(VERSIONS_STRING);
-        if (affectedVersions != null) {
-            for (int j = 0; j < affectedVersions.length(); j++) {
-                JSONObject av = affectedVersions.getJSONObject(j);
-                if (av.has("name")) {
-                    ticket.addAffectedVersion(av.getString("name"));
-                }
-            }
+        if (earliestFVDate != null) {
+            ticket.setFixVersion(earliestFVDate);
+            ticket.setFixVersionName(earliestFVName);
         }
 
-        return ticket;
+        return earliestFVName;
     }
+
+    private static void parseAffectedVersions(TicketInfo ticket, JSONArray affectedVersions) {
+        if (affectedVersions == null) return;
+
+        for (int j = 0; j < affectedVersions.length(); j++) {
+            JSONObject av = affectedVersions.getJSONObject(j);
+            if (av.has("name")) {
+                ticket.addAffectedVersion(av.getString("name"));
+            }
+        }
+    }
+
 
 
     private static JSONObject readJsonFromUrl(String url) throws JsonDownloadException {
@@ -131,78 +139,39 @@ public class TicketParser {
     }
 
 
-    public static Map<String, TicketInfo> parseTicketsFromProject(String projectKey) throws Exception {
+    public static Map<String, TicketInfo> parseTicketsFromProject(String projectKey) throws JiraParsingException {
         Map<String, TicketInfo> ticketMap = new HashMap<>();
-        int startAt = 0;
-        int maxResults = 1000;
-        int total = 1;
+        int startAt = 0, maxResults = 1000, total = 1;
 
-        while (startAt < total) {
-            String jql = "project=" + projectKey + " AND issuetype=Bug AND status in (Resolved, Closed) AND resolution=Fixed";
-            String url = String.format("https://issues.apache.org/jira/rest/api/2/search?jql=%s&startAt=%d&maxResults=%d",
-                    jql.replace(" ", "%20"), startAt, maxResults);
+        try {
+            while (startAt < total) {
+                String jql = "project=" + projectKey + " AND issuetype=Bug AND status in (Resolved, Closed) AND resolution=Fixed";
+                String url = String.format("https://issues.apache.org/jira/rest/api/2/search?jql=%s&startAt=%d&maxResults=%d",
+                        jql.replace(" ", "%20"), startAt, maxResults);
+                JSONObject response = readJsonFromUrl(url);
+                total = response.getInt("total");
+                JSONArray issues = response.getJSONArray("issues");
 
-            JSONObject response = readJsonFromUrl(url);
-            total = response.getInt("total");
-            JSONArray issues = response.getJSONArray("issues");
-
-            for (int i = 0; i < issues.length(); i++) {
-                JSONObject issue = issues.getJSONObject(i);
-                String key = issue.getString("key");
-                JSONObject fields = issue.getJSONObject("fields");
-                String createdStr = fields.getString("created").substring(0, 10);
-                LocalDate createdDate = LocalDate.parse(createdStr);
-
-                JSONArray fixVersions = fields.getJSONArray("fixVersions");
-                if (fixVersions.length() == 0) continue;
-
-                JSONArray affectedVersions = fields.optJSONArray(VERSIONS_STRING);
-
-                TicketInfo ticket = new TicketInfo(key);
-                ticket.setOpeningVersion(createdDate);
-
-                LocalDate earliestFVDate = null;
-                String earliestFVName = null;
-
-                for (int j = 0; j < fixVersions.length(); j++) {
-                    JSONObject fv = fixVersions.getJSONObject(j);
-                    if (fv.has(RELEASE_DATE_STRING) && fv.has("name")) {
-                        String fvName = fv.getString("name");
-                        LocalDate fvDate = LocalDate.parse(fv.getString(RELEASE_DATE_STRING));
-                        ticket.addFixVersion(fvName, fvDate);
-
-                        if (earliestFVDate == null || fvDate.isBefore(earliestFVDate)) {
-                            earliestFVDate = fvDate;
-                            earliestFVName = fvName;
-                        }
+                for (int i = 0; i < issues.length(); i++) {
+                    TicketInfo ticket = parseSingleTicket(issues.getJSONObject(i));
+                    if (ticket != null) {
+                        ticketMap.put(ticket.getId(), ticket);
                     }
                 }
 
-                if (earliestFVDate == null) continue;
-
-                ticket.setFixVersion(earliestFVDate);
-                ticket.setFixVersionName(earliestFVName);
-
-                if (affectedVersions != null) {
-                    for (int j = 0; j < affectedVersions.length(); j++) {
-                        JSONObject av = affectedVersions.getJSONObject(j);
-                        if (av.has("name")) {
-                            ticket.addAffectedVersion(av.getString("name"));
-                        }
-                    }
-                }
-
-                ticketMap.put(key, ticket);
+                startAt += maxResults;
             }
+            return ticketMap;
 
-            startAt += maxResults;
+        } catch (Exception e) {
+            throw new JiraParsingException("Errore durante il parsing dei ticket da JIRA", e);
         }
-
-        return ticketMap;
     }
 
-    public static List<Release> getReleasesFromProject(String projectKey) throws Exception {
-        List<Release> releases = new ArrayList<>();
+
+    public static List<Release> getReleasesFromProject(String projectKey) throws JiraReleaseException, JsonDownloadException {
+
+        try{List<Release> releases = new ArrayList<>();
 
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + projectKey;
         JSONObject json = readJsonFromUrl(url);
@@ -222,7 +191,9 @@ public class TicketParser {
 
         // Ordina le release per data
         releases.sort(Comparator.comparing(Release::getReleaseDate));
-        return releases;
+        return releases;} catch (RuntimeException e) {
+            throw new JiraReleaseException("Errore recupero release da JIRA", e);
+        }
     }
 
 
