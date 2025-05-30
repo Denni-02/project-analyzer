@@ -23,4 +23,11 @@ public class Configuration {
     public static final String PROJECT1_COLUMN = "Bookkeeper";
     public static final String DEBUG_SAMPLED_METHODS_PATH1 = ConfigurationLoader.get("debug.sampled_methods_path1");
 
+    public static final String PROJECT2_NAME = ConfigurationLoader.get("project1.name");
+    public static final String PROJECT2_PATH = ConfigurationLoader.get("project1.path");
+    public static final String OUTPUT_CSV2_PATH = ConfigurationLoader.get("project1.output_csv");
+    public static final String OUTPUT_ARFF2_PATH = ConfigurationLoader.get("project1.output_arff");
+    public static final String PROJECT2_SUBSTRING = "bookkeeper/";
+    public static final String PROJECT2_COLUMN = "Bookkeeper";
+    public static final String DEBUG_SAMPLED_METHODS_PATH2 = ConfigurationLoader.get("debug.sampled_methods_path1");
 }

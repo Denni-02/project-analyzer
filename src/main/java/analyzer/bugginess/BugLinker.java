@@ -4,12 +4,10 @@ import analyzer.csv.CsvTicketCommitWriter;
 import analyzer.exception.GitOperationException;
 import analyzer.exception.TicketLinkageException;
 import analyzer.git.GitRepository;
-import analyzer.model.Commit;
 import analyzer.model.TicketInfo;
 import analyzer.util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
