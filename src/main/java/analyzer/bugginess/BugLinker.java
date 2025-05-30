@@ -1,13 +1,16 @@
 package analyzer.bugginess;
 
 import analyzer.csv.CsvTicketCommitWriter;
+import analyzer.exception.GitOperationException;
 import analyzer.exception.TicketLinkageException;
 import analyzer.git.GitRepository;
+import analyzer.model.Commit;
 import analyzer.model.TicketInfo;
 import analyzer.util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -75,33 +78,39 @@ public class BugLinker {
 
                 List<RevCommit> candidateCommits = repo.getCommitsBetweenDates(start, end);
 
-                for (RevCommit commit : candidateCommits) {
-                    // Se già collegato via messaggio, salta
-                    if (ticket.getCommitIds().contains(commit.getName())) continue;
-
-                    Set<String> touchedFiles = repo.getTouchedJavaFiles(commit);
-
-                    for (String file : touchedFiles) {
-                        // se il file è stato toccato da commit già collegati
-                        boolean isFileMatch = ticket.getFixedFiles().contains(file);
-
-                        // se autore combacia con commit già collegato
-                        boolean isAuthorMatch = repo.isAuthorInTicket(commit, ticket);
-
-                        if (isFileMatch && isAuthorMatch) {
-                            ticket.addCommitId(commit.getName());
-                            for (String f : touchedFiles) {
-                                ticket.addFixedFile(f);
-                            }
-                            break;
-                        }
-                    }
-                }
+                matchingAuthor(candidateCommits, ticket);
             }
         } catch (Exception e) {
             throw new TicketLinkageException("Errore durante il collegamento commit-ticket", e);
         }
     }
+
+    public void matchingAuthor(List<RevCommit> candidateCommits, TicketInfo ticket) throws GitOperationException, IOException {
+        for (RevCommit commit : candidateCommits) {
+            // Se già collegato via messaggio, salta
+            if (ticket.getCommitIds().contains(commit.getName())) continue;
+
+            Set<String> touchedFiles = repo.getTouchedJavaFiles(commit);
+
+            for (String file : touchedFiles) {
+                // se il file è stato toccato da commit già collegati
+                boolean isFileMatch = ticket.getFixedFiles().contains(file);
+
+                // se autore combacia con commit già collegato
+                boolean isAuthorMatch = repo.isAuthorInTicket(commit, ticket);
+
+                if (isFileMatch && isAuthorMatch) {
+                    ticket.addCommitId(commit.getName());
+                    for (String f : touchedFiles) {
+                        ticket.addFixedFile(f);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+
 
 }
 

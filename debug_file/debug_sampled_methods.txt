@@ -6468,3 +6468,1007 @@ Smells: 0
 Smell types:
 
 
+========== METHOD #1000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/subscriptions/SubscriptionManager.java/unsubscribe
+Release: 4.0.0
+
+Code:
+/**
+ * Delete a particular subscription
+ *
+ * @param topic
+ * @param subscriberId
+ */
+public void unsubscribe(ByteString topic, ByteString subscriberId, Callback<Void> callback, Object ctx);
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 4
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #2000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client/src/main/java/org/apache/hedwig/client/handlers/PubSubCallback.java/operationFinished
+Release: 4.0.0
+
+Code:
+public void operationFinished(Object ctx, Void resultOfOperation) {
+    if (logger.isDebugEnabled())
+        logger.debug("PubSub call succeeded for pubSubData: " + pubSubData);
+    // Wake up the main sync PubSub thread that is waiting for us to
+    // complete.
+    synchronized (pubSubData) {
+        isCallSuccessful = true;
+        pubSubData.isDone = true;
+        pubSubData.notify();
+    }
+}
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 2
+Nesting Depth: 1
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #3000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/topics/ZkTopicManager.java/safeProcessResult
+Release: 4.1.0
+
+Code:
+@Override
+public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+    if (rc == Code.NONODE.intValue()) {
+        // Node has somehow disappeared from under us, live with it
+        // since its a transient node
+        logger.warn("While deleting self-node for topic: " + topic.toStringUtf8() + ", node not found");
+        cb.operationFinished(ctx, null);
+        return;
+    }
+    if (rc != Code.OK.intValue()) {
+        KeeperException e = ZkUtils.logErrorAndCreateZKException("Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
+        cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+        return;
+    }
+    HedwigSocketAddress owner = new HedwigSocketAddress(new String(data));
+    if (!owner.equals(addr)) {
+        logger.warn("Wanted to delete self-node for topic: " + topic.toStringUtf8() + " but node for " + owner + " found, leaving untouched");
+        // Not our node, someone else's, leave it alone
+        cb.operationFinished(ctx, null);
+        return;
+    }
+    zk.delete(path, stat.getVersion(), new SafeAsyncZKCallback.VoidCallback() {
+
+        @Override
+        public void safeProcessResult(int rc, String path, Object ctx) {
+            if (rc != Code.OK.intValue() && rc != Code.NONODE.intValue()) {
+                KeeperException e = ZkUtils.logErrorAndCreateZKException("Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
+                cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                return;
+            }
+            cb.operationFinished(ctx, null);
+        }
+    }, ctx);
+}
+
+METRICS:
+LOC: 24
+Cyclomatic Complexity: 5
+Cognitive Complexity: 4
+Parameter Count: 5
+Nesting Depth: 1
+Smells: 1
+Smell types:
+  - GuardLogStatement
+
+
+========== METHOD #4000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clear
+Release: 4.1.0
+
+Code:
+public Builder clear() {
+    if (result == null) {
+        throw new IllegalStateException("Cannot call clear() after build().");
+    }
+    result = new org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 0
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
+========== METHOD #5000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/bookie/Journal.java/run
+Release: 4.2.0
+
+Code:
+/**
+ * A thread used for persisting journal entries to journal files.
+ *
+ * <p>
+ * Besides persisting journal entries, it also takes responsibility of
+ * rolling journal files when a journal file reaches journal file size
+ * limitation.
+ * </p>
+ * <p>
+ * During journal rolling, it first closes the writing journal, generates
+ * new journal file using current timestamp, and continue persistence logic.
+ * Those journals will be garbage collected in SyncThread.
+ * </p>
+ * @see Bookie#SyncThread
+ */
+@Override
+public void run() {
+    LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
+    ByteBuffer lenBuff = ByteBuffer.allocate(4);
+    JournalChannel logFile = null;
+    try {
+        long logId = 0;
+        BufferedChannel bc = null;
+        long lastFlushPosition = 0;
+        QueueEntry qe = null;
+        while (true) {
+            // new journal file to write
+            if (null == logFile) {
+                logId = MathUtils.now();
+                logFile = new JournalChannel(journalDirectory, logId);
+                bc = logFile.getBufferedChannel();
+                lastFlushPosition = 0;
+            }
+            if (qe == null) {
+                if (toFlush.isEmpty()) {
+                    qe = queue.take();
+                } else {
+                    qe = queue.poll();
+                    if (qe == null || bc.position() > lastFlushPosition + 512 * 1024) {
+                        // logFile.force(false);
+                        bc.flush(true);
+                        lastFlushPosition = bc.position();
+                        lastLogMark.setLastLogMark(logId, lastFlushPosition);
+                        for (QueueEntry e : toFlush) {
+                            e.cb.writeComplete(BookieException.Code.OK, e.ledgerId, e.entryId, null, e.ctx);
+                        }
+                        toFlush.clear();
+                        // check whether journal file is over file limit
+                        if (bc.position() > maxJournalSize) {
+                            logFile.close();
+                            logFile = null;
+                            continue;
+                        }
+                    }
+                }
+            }
+            if (!running) {
+                LOG.info("Journal Manager is asked to shut down, quit.");
+                break;
+            }
+            if (qe == null) {
+                // no more queue entry
+                continue;
+            }
+            lenBuff.clear();
+            lenBuff.putInt(qe.entry.remaining());
+            lenBuff.flip();
+            // 
+            // we should be doing the following, but then we run out of
+            // direct byte buffers
+            // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
+            bc.write(lenBuff);
+            bc.write(qe.entry);
+            logFile.preAllocIfNeeded();
+            toFlush.add(qe);
+            qe = null;
+        }
+        logFile.close();
+        logFile = null;
+    } catch (IOException ioe) {
+        LOG.error("I/O exception in Journal thread!", ioe);
+    } catch (InterruptedException ie) {
+        LOG.warn("Journal exits when shutting down", ie);
+    } finally {
+        IOUtils.close(LOG, logFile);
+    }
+}
+
+METRICS:
+LOC: 68
+Cyclomatic Complexity: 12
+Cognitive Complexity: 16
+Parameter Count: 0
+Nesting Depth: 6
+Smells: 4
+Smell types:
+  - CognitiveComplexity
+  - CyclomaticComplexity
+  - LooseCoupling
+  - LawOfDemeter
+
+
+========== METHOD #6000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/proto/DataFormats.java/clear
+Release: 4.2.0
+
+Code:
+public Builder clear() {
+    super.clear();
+    ensembleMember_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    bitField0_ = (bitField0_ & ~0x00000001);
+    firstEntryId_ = 0L;
+    bitField0_ = (bitField0_ & ~0x00000002);
+    return this;
+}
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #7000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/persistence/ScanCallbackWithContext.java/getCtx
+Release: 4.2.0
+
+Code:
+public Object getCtx() {
+    return ctx;
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #8000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clearRegion
+Release: 4.2.0
+
+Code:
+public Builder clearRegion() {
+    bitField0_ = (bitField0_ & ~0x00000001);
+    region_ = getDefaultInstance().getRegion();
+    onChanged();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #9000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clearStatusCode
+Release: 4.2.0
+
+Code:
+public Builder clearStatusCode() {
+    bitField0_ = (bitField0_ & ~0x00000002);
+    statusCode_ = org.apache.hedwig.protocol.PubSubProtocol.StatusCode.SUCCESS;
+    onChanged();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #10000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client/src/main/java/org/apache/hedwig/client/conf/ClientConfiguration.java/getSubscribeReconnectRetryWaitTime
+Release: 4.2.0
+
+Code:
+// This parameter is used to determine how long we wait before retrying the
+// Subscribe Reconnect request. This is done when the connection to a server
+// disconnects and we attempt to connect to it. We'll keep on trying but
+// in case the server(s) is down for a longer time, we want to throttle
+// how often we do the subscribe reconnect request. The time to wait is in
+// milliseconds.
+public long getSubscribeReconnectRetryWaitTime() {
+    return conf.getLong(SUBSCRIBE_RECONNECT_RETRY_WAIT_TIME, 10000);
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #11000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerDeleteOp.java/safeOperationComplete
+Release: 4.2.1
+
+Code:
+/**
+ * Implements Delete Callback.
+ */
+@Override
+public void safeOperationComplete(int rc, Void result) {
+    cb.deleteComplete(rc, this.ctx);
+}
+
+METRICS:
+LOC: 6
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 2
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #12000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/metastore/Value.java/clearFields
+Release: 4.2.1
+
+Code:
+public Value clearFields() {
+    fields.clear();
+    return this;
+}
+
+METRICS:
+LOC: 3
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #13000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/admin/console/HedwigConsole.java/runCmd
+Release: 4.2.1
+
+Code:
+@Override
+public boolean runCmd(String[] args) throws Exception {
+    if (args.length < 4) {
+        return false;
+    }
+    long lastConsumedId = 0;
+    SubscriptionData subData = admin.getSubscription(ByteString.copyFromUtf8(args[1]), ByteString.copyFromUtf8(args[2]));
+    if (null == subData) {
+        System.err.println("Failed to read subscription for topic: " + args[1] + " subscriber: " + args[2]);
+        return true;
+    }
+    lastConsumedId = subData.getState().getMsgId().getLocalComponent();
+    long numMessagesToConsume = Long.parseLong(args[3]);
+    long idToConsumed = lastConsumedId + numMessagesToConsume;
+    System.out.println("Try to move subscriber(" + args[2] + ") consume ptr of topic(" + args[1] + ") from " + lastConsumedId + " to " + idToConsumed);
+    MessageSeqId consumeId = MessageSeqId.newBuilder().setLocalComponent(idToConsumed).build();
+    ByteString topic = ByteString.copyFromUtf8(args[1]);
+    ByteString subId = ByteString.copyFromUtf8(args[2]);
+    try {
+        subscriber.consume(topic, subId, consumeId);
+    } catch (Exception e) {
+        System.err.println("CONSUME FAILED");
+    }
+    return true;
+}
+
+METRICS:
+LOC: 21
+Cyclomatic Complexity: 4
+Cognitive Complexity: 4
+Parameter Count: 1
+Nesting Depth: 2
+Smells: 3
+Smell types:
+  - UnusedAssignment
+  - SystemPrintln
+  - AvoidCatchingGenericException
+
+
+========== METHOD #14000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/mergeFrom
+Release: 4.2.1
+
+Code:
+public Builder mergeFrom(com.google.protobuf.Message other) {
+    if (other instanceof org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions) {
+        return mergeFrom((org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions) other);
+    } else {
+        super.mergeFrom(other);
+        return this;
+    }
+}
+
+METRICS:
+LOC: 6
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 1
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
+========== METHOD #15000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/parseFrom
+Release: 4.2.1
+
+Code:
+public static org.apache.hedwig.protocol.PubSubProtocol.HubInfoData parseFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+    return newBuilder().mergeFrom(input, extensionRegistry).buildParsed();
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 2
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #16000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client-jms/src/main/java/org/apache/hedwig/jms/SessionImpl.java/addToSubscribers
+Release: 4.2.1
+
+Code:
+public boolean addToSubscribers(MessageConsumer subscriber, MessagingSessionFacade.DestinationType type, String destination, String subscriberId) {
+    switch(type) {
+        case QUEUE:
+            return createIfMissingAndAdd(queueSubscriptionToSubscriberMap, new QueueSubscription(destination, subscriberId), subscriber);
+        case TOPIC:
+            return createIfMissingAndAdd(topicSubscriptionToSubscriberMap, new TopicSubscription(destination, subscriberId), subscriber);
+        default:
+            throw new IllegalArgumentException("Unknown subscription type " + type);
+    }
+}
+
+METRICS:
+LOC: 8
+Cyclomatic Complexity: 4
+Cognitive Complexity: 1
+Parameter Count: 4
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
+========== METHOD #1000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/subscriptions/SubscriptionManager.java/unsubscribe
+Release: 4.0.0
+
+Code:
+/**
+ * Delete a particular subscription
+ *
+ * @param topic
+ * @param subscriberId
+ */
+public void unsubscribe(ByteString topic, ByteString subscriberId, Callback<Void> callback, Object ctx);
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 4
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #2000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client/src/main/java/org/apache/hedwig/client/handlers/PubSubCallback.java/operationFinished
+Release: 4.0.0
+
+Code:
+public void operationFinished(Object ctx, Void resultOfOperation) {
+    if (logger.isDebugEnabled())
+        logger.debug("PubSub call succeeded for pubSubData: " + pubSubData);
+    // Wake up the main sync PubSub thread that is waiting for us to
+    // complete.
+    synchronized (pubSubData) {
+        isCallSuccessful = true;
+        pubSubData.isDone = true;
+        pubSubData.notify();
+    }
+}
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 2
+Nesting Depth: 1
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #3000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/topics/ZkTopicManager.java/safeProcessResult
+Release: 4.1.0
+
+Code:
+@Override
+public void safeProcessResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
+    if (rc == Code.NONODE.intValue()) {
+        // Node has somehow disappeared from under us, live with it
+        // since its a transient node
+        logger.warn("While deleting self-node for topic: " + topic.toStringUtf8() + ", node not found");
+        cb.operationFinished(ctx, null);
+        return;
+    }
+    if (rc != Code.OK.intValue()) {
+        KeeperException e = ZkUtils.logErrorAndCreateZKException("Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
+        cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+        return;
+    }
+    HedwigSocketAddress owner = new HedwigSocketAddress(new String(data));
+    if (!owner.equals(addr)) {
+        logger.warn("Wanted to delete self-node for topic: " + topic.toStringUtf8() + " but node for " + owner + " found, leaving untouched");
+        // Not our node, someone else's, leave it alone
+        cb.operationFinished(ctx, null);
+        return;
+    }
+    zk.delete(path, stat.getVersion(), new SafeAsyncZKCallback.VoidCallback() {
+
+        @Override
+        public void safeProcessResult(int rc, String path, Object ctx) {
+            if (rc != Code.OK.intValue() && rc != Code.NONODE.intValue()) {
+                KeeperException e = ZkUtils.logErrorAndCreateZKException("Failed to delete self-ownership node for topic: " + topic.toStringUtf8(), path, rc);
+                cb.operationFailed(ctx, new PubSubException.ServiceDownException(e));
+                return;
+            }
+            cb.operationFinished(ctx, null);
+        }
+    }, ctx);
+}
+
+METRICS:
+LOC: 24
+Cyclomatic Complexity: 5
+Cognitive Complexity: 4
+Parameter Count: 5
+Nesting Depth: 1
+Smells: 1
+Smell types:
+  - GuardLogStatement
+
+
+========== METHOD #4000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clear
+Release: 4.1.0
+
+Code:
+public Builder clear() {
+    if (result == null) {
+        throw new IllegalStateException("Cannot call clear() after build().");
+    }
+    result = new org.apache.hedwig.protocol.PubSubProtocol.SubscribeRequest();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 0
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
+========== METHOD #5000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/bookie/Journal.java/run
+Release: 4.2.0
+
+Code:
+/**
+ * A thread used for persisting journal entries to journal files.
+ *
+ * <p>
+ * Besides persisting journal entries, it also takes responsibility of
+ * rolling journal files when a journal file reaches journal file size
+ * limitation.
+ * </p>
+ * <p>
+ * During journal rolling, it first closes the writing journal, generates
+ * new journal file using current timestamp, and continue persistence logic.
+ * Those journals will be garbage collected in SyncThread.
+ * </p>
+ * @see Bookie#SyncThread
+ */
+@Override
+public void run() {
+    LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
+    ByteBuffer lenBuff = ByteBuffer.allocate(4);
+    JournalChannel logFile = null;
+    try {
+        long logId = 0;
+        BufferedChannel bc = null;
+        long lastFlushPosition = 0;
+        QueueEntry qe = null;
+        while (true) {
+            // new journal file to write
+            if (null == logFile) {
+                logId = MathUtils.now();
+                logFile = new JournalChannel(journalDirectory, logId);
+                bc = logFile.getBufferedChannel();
+                lastFlushPosition = 0;
+            }
+            if (qe == null) {
+                if (toFlush.isEmpty()) {
+                    qe = queue.take();
+                } else {
+                    qe = queue.poll();
+                    if (qe == null || bc.position() > lastFlushPosition + 512 * 1024) {
+                        // logFile.force(false);
+                        bc.flush(true);
+                        lastFlushPosition = bc.position();
+                        lastLogMark.setLastLogMark(logId, lastFlushPosition);
+                        for (QueueEntry e : toFlush) {
+                            e.cb.writeComplete(BookieException.Code.OK, e.ledgerId, e.entryId, null, e.ctx);
+                        }
+                        toFlush.clear();
+                        // check whether journal file is over file limit
+                        if (bc.position() > maxJournalSize) {
+                            logFile.close();
+                            logFile = null;
+                            continue;
+                        }
+                    }
+                }
+            }
+            if (!running) {
+                LOG.info("Journal Manager is asked to shut down, quit.");
+                break;
+            }
+            if (qe == null) {
+                // no more queue entry
+                continue;
+            }
+            lenBuff.clear();
+            lenBuff.putInt(qe.entry.remaining());
+            lenBuff.flip();
+            // 
+            // we should be doing the following, but then we run out of
+            // direct byte buffers
+            // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
+            bc.write(lenBuff);
+            bc.write(qe.entry);
+            logFile.preAllocIfNeeded();
+            toFlush.add(qe);
+            qe = null;
+        }
+        logFile.close();
+        logFile = null;
+    } catch (IOException ioe) {
+        LOG.error("I/O exception in Journal thread!", ioe);
+    } catch (InterruptedException ie) {
+        LOG.warn("Journal exits when shutting down", ie);
+    } finally {
+        IOUtils.close(LOG, logFile);
+    }
+}
+
+METRICS:
+LOC: 68
+Cyclomatic Complexity: 12
+Cognitive Complexity: 16
+Parameter Count: 0
+Nesting Depth: 6
+Smells: 4
+Smell types:
+  - CognitiveComplexity
+  - CyclomaticComplexity
+  - LooseCoupling
+  - LawOfDemeter
+
+
+========== METHOD #6000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/proto/DataFormats.java/clear
+Release: 4.2.0
+
+Code:
+public Builder clear() {
+    super.clear();
+    ensembleMember_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+    bitField0_ = (bitField0_ & ~0x00000001);
+    firstEntryId_ = 0L;
+    bitField0_ = (bitField0_ & ~0x00000002);
+    return this;
+}
+
+METRICS:
+LOC: 7
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #7000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/server/persistence/ScanCallbackWithContext.java/getCtx
+Release: 4.2.0
+
+Code:
+public Object getCtx() {
+    return ctx;
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #8000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clearRegion
+Release: 4.2.0
+
+Code:
+public Builder clearRegion() {
+    bitField0_ = (bitField0_ & ~0x00000001);
+    region_ = getDefaultInstance().getRegion();
+    onChanged();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 1
+Smell types:
+  - LawOfDemeter
+
+
+========== METHOD #9000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/clearStatusCode
+Release: 4.2.0
+
+Code:
+public Builder clearStatusCode() {
+    bitField0_ = (bitField0_ & ~0x00000002);
+    statusCode_ = org.apache.hedwig.protocol.PubSubProtocol.StatusCode.SUCCESS;
+    onChanged();
+    return this;
+}
+
+METRICS:
+LOC: 5
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #10000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client/src/main/java/org/apache/hedwig/client/conf/ClientConfiguration.java/getSubscribeReconnectRetryWaitTime
+Release: 4.2.0
+
+Code:
+// This parameter is used to determine how long we wait before retrying the
+// Subscribe Reconnect request. This is done when the connection to a server
+// disconnects and we attempt to connect to it. We'll keep on trying but
+// in case the server(s) is down for a longer time, we want to throttle
+// how often we do the subscribe reconnect request. The time to wait is in
+// milliseconds.
+public long getSubscribeReconnectRetryWaitTime() {
+    return conf.getLong(SUBSCRIBE_RECONNECT_RETRY_WAIT_TIME, 10000);
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #11000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/client/LedgerDeleteOp.java/safeOperationComplete
+Release: 4.2.1
+
+Code:
+/**
+ * Implements Delete Callback.
+ */
+@Override
+public void safeOperationComplete(int rc, Void result) {
+    cb.deleteComplete(rc, this.ctx);
+}
+
+METRICS:
+LOC: 6
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 2
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #12000 ==========
+Method: /home/denni/isw2/bookkeeper/bookkeeper-server/src/main/java/org/apache/bookkeeper/metastore/Value.java/clearFields
+Release: 4.2.1
+
+Code:
+public Value clearFields() {
+    fields.clear();
+    return this;
+}
+
+METRICS:
+LOC: 3
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 0
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #13000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-server/src/main/java/org/apache/hedwig/admin/console/HedwigConsole.java/runCmd
+Release: 4.2.1
+
+Code:
+@Override
+public boolean runCmd(String[] args) throws Exception {
+    if (args.length < 4) {
+        return false;
+    }
+    long lastConsumedId = 0;
+    SubscriptionData subData = admin.getSubscription(ByteString.copyFromUtf8(args[1]), ByteString.copyFromUtf8(args[2]));
+    if (null == subData) {
+        System.err.println("Failed to read subscription for topic: " + args[1] + " subscriber: " + args[2]);
+        return true;
+    }
+    lastConsumedId = subData.getState().getMsgId().getLocalComponent();
+    long numMessagesToConsume = Long.parseLong(args[3]);
+    long idToConsumed = lastConsumedId + numMessagesToConsume;
+    System.out.println("Try to move subscriber(" + args[2] + ") consume ptr of topic(" + args[1] + ") from " + lastConsumedId + " to " + idToConsumed);
+    MessageSeqId consumeId = MessageSeqId.newBuilder().setLocalComponent(idToConsumed).build();
+    ByteString topic = ByteString.copyFromUtf8(args[1]);
+    ByteString subId = ByteString.copyFromUtf8(args[2]);
+    try {
+        subscriber.consume(topic, subId, consumeId);
+    } catch (Exception e) {
+        System.err.println("CONSUME FAILED");
+    }
+    return true;
+}
+
+METRICS:
+LOC: 21
+Cyclomatic Complexity: 4
+Cognitive Complexity: 4
+Parameter Count: 1
+Nesting Depth: 2
+Smells: 3
+Smell types:
+  - UnusedAssignment
+  - SystemPrintln
+  - AvoidCatchingGenericException
+
+
+========== METHOD #14000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/mergeFrom
+Release: 4.2.1
+
+Code:
+public Builder mergeFrom(com.google.protobuf.Message other) {
+    if (other instanceof org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions) {
+        return mergeFrom((org.apache.hedwig.protocol.PubSubProtocol.SubscriptionOptions) other);
+    } else {
+        super.mergeFrom(other);
+        return this;
+    }
+}
+
+METRICS:
+LOC: 6
+Cyclomatic Complexity: 2
+Cognitive Complexity: 1
+Parameter Count: 1
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
+========== METHOD #15000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-protocol/src/main/java/org/apache/hedwig/protocol/PubSubProtocol.java/parseFrom
+Release: 4.2.1
+
+Code:
+public static org.apache.hedwig.protocol.PubSubProtocol.HubInfoData parseFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
+    return newBuilder().mergeFrom(input, extensionRegistry).buildParsed();
+}
+
+METRICS:
+LOC: 2
+Cyclomatic Complexity: 1
+Cognitive Complexity: 0
+Parameter Count: 2
+Nesting Depth: 0
+Smells: 0
+Smell types:
+
+
+========== METHOD #16000 ==========
+Method: /home/denni/isw2/bookkeeper/hedwig-client-jms/src/main/java/org/apache/hedwig/jms/SessionImpl.java/addToSubscribers
+Release: 4.2.1
+
+Code:
+public boolean addToSubscribers(MessageConsumer subscriber, MessagingSessionFacade.DestinationType type, String destination, String subscriberId) {
+    switch(type) {
+        case QUEUE:
+            return createIfMissingAndAdd(queueSubscriptionToSubscriberMap, new QueueSubscription(destination, subscriberId), subscriber);
+        case TOPIC:
+            return createIfMissingAndAdd(topicSubscriptionToSubscriberMap, new TopicSubscription(destination, subscriberId), subscriber);
+        default:
+            throw new IllegalArgumentException("Unknown subscription type " + type);
+    }
+}
+
+METRICS:
+LOC: 8
+Cyclomatic Complexity: 4
+Cognitive Complexity: 1
+Parameter Count: 4
+Nesting Depth: 1
+Smells: 0
+Smell types:
+
+
