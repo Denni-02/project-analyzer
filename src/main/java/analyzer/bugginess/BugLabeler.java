@@ -5,7 +5,7 @@ import analyzer.git.GitRepository;
 import analyzer.model.MethodInfo;
 import analyzer.model.TicketInfo;
 import analyzer.model.Release;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
 import java.util.*;
 import java.util.logging.Level;
@@ -32,7 +32,7 @@ public class BugLabeler {
         int idx = methodName.lastIndexOf(".java");
         if (idx != -1) {
             String relative = methodName.substring(0, idx + 5);
-            if (relative.contains(Configuration.PROJECT1_SUBSTRING)) {
+            if (relative.contains(Configuration.getProjectSubstring())) {
                 return relative.substring(relative.indexOf(Configuration.PROJECT1_SUBSTRING) + Configuration.PROJECT1_SUBSTRING.length());
             }
             return relative;
@@ -89,7 +89,6 @@ public class BugLabeler {
 
         // 6. CSV di debug opzionale
         writeDebugCsv(debugRows);
-
     }
 
     private static void registerValidTickets(Map<String, TicketInfo> tickets, ProportionEstimator estimator) {
@@ -102,10 +101,7 @@ public class BugLabeler {
 
     private static void writeDebugCsv(List<String[]> debugRows) {
         if (Configuration.LABELING_DEBUG) {
-            CsvBugLabelerDebug.writeCsv(
-                    "/home/denni/isw2/project-analyzer/debug_file/debug_buggy_methods.csv",
-                    debugRows
-            );
+            CsvBugLabelerDebug.writeCsv(Configuration.getDebugBuggyMethods(), debugRows);
         }
     }
 

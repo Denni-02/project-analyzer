@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.logging.Level;
 
-import analyzer.util.Configuration;
+import util.Configuration;
 
 public class GetReleaseInfo {
 
@@ -33,19 +33,33 @@ public class GetReleaseInfo {
         releaseNames.clear();
         releaseIDs.clear();
 
-        if (Configuration.BASIC_DEBUG) Configuration.logger.info("Recupero release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
+        if (Configuration.BASIC_DEBUG) Configuration.logger.info("Recupero release da JIRA per il progetto " + Configuration.getProjectName());
 
         // 1. Richiesta HTTP
-        String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.PROJECT1_NAME;
+        String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.getProjectName();
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
 
         // 2. Parsing delle versioni
-        for (int i = 0; i < versions.length(); i++) {
+        /*for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
                 String dateStr = version.getString(RELEASE_DATE_STRING);
                 String name = version.optString("name", "unknown");
+                String id = version.optString("id", "0");
+                addRelease(dateStr, name, id);
+            }
+        }
+
+         */
+        for (int i = 0; i < versions.length(); i++) {
+            JSONObject version = versions.getJSONObject(i);
+            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
+                String name = version.optString("name", "unknown");
+
+                if (!name.matches("^\\d+\\.\\d+\\.\\d+$")) continue;
+
+                String dateStr = version.getString(RELEASE_DATE_STRING);
                 String id = version.optString("id", "0");
                 addRelease(dateStr, name, id);
             }
@@ -82,7 +96,7 @@ public class GetReleaseInfo {
 
         // 6. Scrivi su CSV tramite CsvDebugWriter
         CsvDebugWriter.writeReleaseCsv(
-                "/home/denni/isw2/project-analyzer/debug_file/bookkeeper_version_info.csv",
+                Configuration.getDebugVersionInfoPath(),
                 allReleases,
                 selectedReleases
         );
@@ -107,19 +121,34 @@ public class GetReleaseInfo {
         releaseIDs.clear();
 
         if (Configuration.LABELING_DEBUG)
-            Configuration.logger.info("Recupero TUTTE le release da JIRA per il progetto " + Configuration.PROJECT1_NAME);
+            Configuration.logger.info("Recupero TUTTE le release da JIRA per il progetto " + Configuration.getProjectName());
 
         // 1. Richiesta HTTP
-        String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.PROJECT1_NAME;
+        String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.getProjectName();
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
 
         // 2. Parsing delle versioni
-        for (int i = 0; i < versions.length(); i++) {
+        /*for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
                 String dateStr = version.getString(RELEASE_DATE_STRING);
                 String name = version.optString("name", "unknown");
+                String id = version.optString("id", "0");
+                addRelease(dateStr, name, id);
+            }
+        }
+
+         */
+
+        for (int i = 0; i < versions.length(); i++) {
+            JSONObject version = versions.getJSONObject(i);
+            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
+                String name = version.optString("name", "unknown");
+
+                if (!name.matches("^\\d+\\.\\d+\\.\\d+$")) continue;
+
+                String dateStr = version.getString(RELEASE_DATE_STRING);
                 String id = version.optString("id", "0");
                 addRelease(dateStr, name, id);
             }

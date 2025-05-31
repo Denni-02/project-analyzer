@@ -2,7 +2,7 @@ package analyzer.bugginess;
 
 import analyzer.model.Release;
 import analyzer.model.TicketInfo;
-import analyzer.util.Configuration;
+import util.Configuration;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

@@ -6,7 +6,7 @@ import analyzer.exception.JiraReleaseException;
 import analyzer.exception.JsonDownloadException;
 import analyzer.model.Release;
 import analyzer.model.TicketInfo;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.BufferedReader;
@@ -32,7 +32,7 @@ public class TicketParser {
             int total = 1;
 
             while (startAt < total) {
-                String jql = "project=" + Configuration.PROJECT1_NAME + " AND issuetype=Bug AND status in (Resolved, Closed) AND resolution=Fixed";
+                String jql = "project=" + Configuration.getProjectName() + " AND issuetype=Bug AND status in (Resolved, Closed) AND resolution=Fixed";
                 String url = String.format("https://issues.apache.org/jira/rest/api/2/search?jql=%s&startAt=%d&maxResults=%d",
                         jql.replace(" ", "%20"), startAt, maxResults);
                 JSONObject response = readJsonFromUrl(url);
@@ -90,6 +90,10 @@ public class TicketParser {
             JSONObject fv = fixVersions.getJSONObject(j);
             if (fv.has(RELEASE_DATE_STRING) && fv.has("name")) {
                 String fvName = fv.getString("name");
+                if (!fvName.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                    continue;
+                }
+
                 LocalDate fvDate = LocalDate.parse(fv.getString(RELEASE_DATE_STRING));
                 ticket.addFixVersion(fvName, fvDate);
 
@@ -114,12 +118,16 @@ public class TicketParser {
         for (int j = 0; j < affectedVersions.length(); j++) {
             JSONObject av = affectedVersions.getJSONObject(j);
             if (av.has("name")) {
-                ticket.addAffectedVersion(av.getString("name"));
+                //ticket.addAffectedVersion(av.getString("name"));
+                String avName = av.getString("name").trim();
+                if (!avName.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                    continue;
+                }
+                ticket.addAffectedVersion(avName);
+
             }
         }
     }
-
-
 
     private static JSONObject readJsonFromUrl(String url) throws JsonDownloadException {
         try (InputStream is = new URL(url).openStream();
@@ -137,7 +145,6 @@ public class TicketParser {
             throw new JsonDownloadException("Errore nel download o parsing del JSON da URL: " + url, e);
         }
     }
-
 
     public static Map<String, TicketInfo> parseTicketsFromProject(String projectKey) throws JiraParsingException {
         Map<String, TicketInfo> ticketMap = new HashMap<>();
@@ -170,7 +177,6 @@ public class TicketParser {
         }
     }
 
-
     public static List<Release> getReleasesFromProject(String projectKey) throws JiraReleaseException, JsonDownloadException {
 
         try{List<Release> releases = new ArrayList<>();
@@ -183,7 +189,12 @@ public class TicketParser {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has("released") && version.getBoolean("released")) {
                 Release r = new Release();
-                r.setName(version.optString("name", "unknown"));
+                String name = version.optString("name", "unknown");
+                if (!name.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                    continue;
+                }
+                //r.setName(version.optString("name", "unknown"));
+                r.setName(name);
                 r.setId(version.optString("id", "0"));
                 r.setReleaseDate(LocalDate.parse(version.getString(RELEASE_DATE_STRING)));
                 r.setReleased(true);
@@ -201,9 +212,6 @@ public class TicketParser {
 
     public static void main(String[] args) throws Exception {
         Map<String, TicketInfo> tickets = parseTicketsFromJira();
-        CsvTicketDebugWriter.writeTicketCsv(
-                "/home/denni/isw2/project-analyzer/debug_file/ticket_debug.csv",
-                tickets
-        );
+        CsvTicketDebugWriter.writeTicketCsv(Configuration.getDebugTicketPath(), tickets);
     }
 }

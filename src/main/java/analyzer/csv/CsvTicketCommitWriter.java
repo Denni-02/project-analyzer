@@ -1,7 +1,7 @@
 package analyzer.csv;
 
 import analyzer.model.TicketInfo;
-import analyzer.util.Configuration;
+import util.Configuration;
 
 import java.io.FileWriter;
 import java.io.IOException;

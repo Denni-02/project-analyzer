@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
-
 import analyzer.exception.GitOperationException;
 import analyzer.model.TicketInfo;
 import org.eclipse.jgit.api.Git;
@@ -18,7 +17,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevSort;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.eclipse.jgit.revwalk.filter.MessageRevFilter;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
 

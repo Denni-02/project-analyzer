@@ -2,7 +2,7 @@ package analyzer.csv;
 
 import analyzer.model.Commit;
 import analyzer.model.Release;
-import analyzer.util.Configuration;
+import util.Configuration;
 
 import java.io.FileWriter;
 import java.io.IOException;

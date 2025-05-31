@@ -3,7 +3,7 @@ package analyzer.bugginess;
 import analyzer.jira.TicketParser;
 import analyzer.model.TicketInfo;
 import analyzer.model.Release;
-import analyzer.util.Configuration;
+import util.Configuration;
 
 import java.time.LocalDate;
 import java.util.*;

@@ -7,14 +7,17 @@ import analyzer.model.MethodInfo;
 import analyzer.model.Release;
 import analyzer.metrics.MethodMetricsExtractor;
 import analyzer.csv.CsvDebugWriter;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.revwalk.RevCommit;
+
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.slf4j.LoggerFactory;
 import analyzer.model.TicketInfo;
 import analyzer.jira.TicketParser;
@@ -45,7 +48,7 @@ public class DatasetApp {
             }
 
             // Inizializza Git + estrattore delle metriche
-            GitRepository repo = new GitRepository(Configuration.PROJECT1_PATH);
+            GitRepository repo = new GitRepository(Configuration.getProjectPath());
             MethodMetricsExtractor extractor = new MethodMetricsExtractor(repo);
 
             //Struttura dati per commit
@@ -80,17 +83,18 @@ public class DatasetApp {
                 c.setMessage(commit.getShortMessage());
                 c.setFilesTouched(null);
                 selectedCommits.add(c);
-                repo.checkoutCommit(commit); // Fai il checkout al commit
+
+               repo.checkoutCommit(commit); // Fai il checkout al commit
 
                 extractor.setCurrentRelease(rel.getName()); // Imposta release corrente
                 extractor.setCurrentReleaseDate(rel.getReleaseDate());
-                extractor.analyzeProject(Configuration.PROJECT1_PATH, rel);
+                extractor.analyzeProject(Configuration.getProjectPath(), rel);
 
-                CsvDebugWriter.writeCommitCsv("/home/denni/isw2/project-analyzer/debug_file/commits_per_release.csv", selectedCommits);
+                CsvDebugWriter.writeCommitCsv(Configuration.getCommitDebugCsvPath(), selectedCommits);
             }
 
             // Scrivi i risultati finali nel file CSV
-            extractor.exportResults(Configuration.OUTPUT_CSV1_PATH);
+            extractor.exportResults(Configuration.getOutputCsvPath());
 
             // Chiude correttamente la connessione con la repository Git
             repo.close();
@@ -112,9 +116,9 @@ public class DatasetApp {
 
             // 4. Riscrivi CSV aggiornato
             CsvHandler csvHandler = new CsvHandler();
-            csvHandler.writeCsv(Configuration.OUTPUT_CSV1_PATH, methods);
+            csvHandler.writeCsv(Configuration.getOutputCsvPath(), methods);
 
-            if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi completata. File salvato in: " + Configuration.OUTPUT_CSV1_PATH);
+            if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi completata. File salvato in: " + Configuration.getOutputCsvPath());
 
         } catch (Exception e) {
             e.printStackTrace();

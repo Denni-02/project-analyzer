@@ -4,11 +4,10 @@ import ml.arff.CSVToARFFConverter;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
-import analyzer.util.Configuration;
+import util.Configuration;
 import ml.model.ClassifierFactory;
 import ml.evaluation.ClassifierEvaluator;
 import ml.evaluation.EvaluationResult;
-
 import java.util.logging.Level;
 
 
@@ -42,7 +41,7 @@ public class MLApp {
 
             // === 2. Caricamento del file ARFF ===
             if(Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) Configuration.logger.info("Carico il dataset ARFF...");
-            DataSource source = new DataSource(Configuration.OUTPUT_ARFF1_PATH);
+            DataSource source = new DataSource(Configuration.getOutputArffPath());
             Instances data = source.getDataSet();
 
             // === 3. Impostazione dell'attributo target ===

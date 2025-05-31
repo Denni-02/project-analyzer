@@ -5,7 +5,7 @@ import analyzer.exception.GitOperationException;
 import analyzer.exception.TicketLinkageException;
 import analyzer.git.GitRepository;
 import analyzer.model.TicketInfo;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
@@ -32,13 +32,13 @@ public class BugLinker {
         ch.qos.logback.classic.Logger jgitLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.eclipse.jgit");
         jgitLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
 
-        var repo = new GitRepository(Configuration.PROJECT1_PATH);
+        var repo = new GitRepository(Configuration.getProjectPath());
         var tickets = analyzer.jira.TicketParser.parseTicketsFromJira();
 
         var linker = new BugLinker(repo);
         linker.linkCommitsToTickets(tickets);
 
-        CsvTicketCommitWriter.write("/home/denni/isw2/project-analyzer/debug_file/ticket_commits_files.csv", tickets);
+        CsvTicketCommitWriter.write(Configuration.getDebugTicketCommitsPath(), tickets);
     }
 
     public void linkCommitsToTickets(Map<String, TicketInfo> tickets) throws TicketLinkageException {
@@ -107,8 +107,6 @@ public class BugLinker {
             }
         }
     }
-
-
 
 }
 

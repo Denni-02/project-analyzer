@@ -2,7 +2,7 @@ package analyzer.bugginess;
 
 import analyzer.model.MethodInfo;
 import analyzer.git.GitRepository;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;

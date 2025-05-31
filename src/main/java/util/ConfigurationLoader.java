@@ -1,4 +1,4 @@
-package analyzer.util;
+package util;
 
 import analyzer.exception.ConfigurationLoadException;
 

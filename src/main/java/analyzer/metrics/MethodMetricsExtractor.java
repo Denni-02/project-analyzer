@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import analyzer.model.Release;
-import analyzer.util.Configuration;
+import util.Configuration;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -136,7 +136,7 @@ public class MethodMetricsExtractor {
                     methodInfos.add(info);
 
                     if (Configuration.BASIC_DEBUG && methodInfos.size() % 1000 == 0) {
-                        String debugPath = Configuration.DEBUG_SAMPLED_METHODS_PATH1;
+                        String debugPath = Configuration.getDebugSampledMethodsPath();
                         MethodInfo sampled = methodInfos.get(methodInfos.size() - 1);
                         logDebugSample(methodInfos.size(), sampled, debugPath);
                     }
@@ -157,7 +157,7 @@ public class MethodMetricsExtractor {
 
             MethodInfo info = new MethodInfo();
 
-            info.setProjectName(Configuration.PROJECT1_COLUMN);
+            info.setProjectName(Configuration.getProjectColumn());
             info.setMethodName(path.toString() + "/" + method.getNameAsString());
             info.setReleaseId(currentRelease);
             info.setReleaseDate(currentReleaseDate);

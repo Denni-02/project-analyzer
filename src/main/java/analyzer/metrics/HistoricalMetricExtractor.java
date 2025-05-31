@@ -4,7 +4,7 @@ import analyzer.model.MethodHistoryStats;
 import analyzer.model.MethodInfo;
 import analyzer.model.Release;
 import analyzer.git.GitRepository;
-import analyzer.util.Configuration;
+import util.Configuration;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.Edit;
@@ -83,8 +83,8 @@ public class HistoricalMetricExtractor {
         if (idx != -1) {
             String relative = fullName.substring(0, idx + 5);
             // Normalizza rimuovendo il path assoluto
-            if (relative.contains(Configuration.PROJECT1_SUBSTRING)) {
-                return relative.substring(relative.indexOf(Configuration.PROJECT1_SUBSTRING) + Configuration.PROJECT1_SUBSTRING.length());
+            if (relative.contains(Configuration.getProjectSubstring())) {
+                return relative.substring(relative.indexOf(Configuration.getProjectSubstring()) + Configuration.getProjectSubstring().length());
             }
             return relative;
         }

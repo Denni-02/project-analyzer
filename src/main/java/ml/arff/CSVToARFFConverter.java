@@ -1,6 +1,6 @@
 package ml.arff;
 
-import analyzer.util.Configuration;
+import util.Configuration;
 import weka.core.Instances;
 import weka.core.converters.CSVLoader;
 import weka.core.converters.ArffSaver;
@@ -12,10 +12,10 @@ public class CSVToARFFConverter {
 
     public static void main(String[] args) throws Exception {
         // Percorso assoluto al file CSV
-        String csvPath = Configuration.OUTPUT_CSV1_PATH;
+        String csvPath = Configuration.getOutputCsvPath();
 
         // Percorso dove salvare il file ARFF
-        String arffPath = Configuration.OUTPUT_ARFF1_PATH;
+        String arffPath = Configuration.getOutputArffPath();
 
         // Loader WEKA per CSV
         CSVLoader loader = new CSVLoader();
