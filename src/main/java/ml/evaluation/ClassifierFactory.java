@@ -26,4 +26,14 @@ public class ClassifierFactory {
         tree.setConfidenceFactor(0.25f);   // default: 0.25
         return tree;
     }
+
+    public static Classifier getRandomForest() {
+        RandomForest rf = new RandomForest();
+        rf.setNumIterations(100); // questo è spesso il nome corretto
+        rf.setNumFeatures(0); // default (√n features)
+        rf.setNumExecutionSlots(Runtime.getRuntime().availableProcessors());
+        rf.setSeed(42);       // riproducibilità
+        return rf;
+    }
+
 }

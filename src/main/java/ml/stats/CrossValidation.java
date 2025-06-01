@@ -81,7 +81,7 @@ public class CrossValidation {
             }
 
             evaluateAndLog("NaiveBayes", ClassifierFactory.getNaiveBayes(), data);
-            evaluateAndLog("J48", ClassifierFactory.getJ48(), data);
+            evaluateAndLog("RandomForest", ClassifierFactory.getRandomForest(), data);
             evaluateAndLog("IBk", ClassifierFactory.getIBk(), data);
 
         } catch (Exception e) {
