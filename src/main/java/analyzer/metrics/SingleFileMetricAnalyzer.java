@@ -1,6 +1,5 @@
 package analyzer.metrics;
 
-import analyzer.metrics.StaticMetricCalculator;
 import analyzer.model.MethodInfo;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -21,6 +20,8 @@ import java.nio.file.Paths;
 
 public class SingleFileMetricAnalyzer {
 
+    private static final String FILE_NAME = "/home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java";
+
     public static void main(String[] args) {
 
         // Disabilita i log di PMD
@@ -31,10 +32,8 @@ public class SingleFileMetricAnalyzer {
         jgitLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
 
         // === Specifica il file Java da analizzare ===
-        //File javaFile = new File("/home/denni/isw2/bookkeeper/bookkeeper-benchmark/src/main/java/org/apache/bookkeeper/benchmark/BenchReadThroughputLatency.java");
-        File javaFile = new File("/home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java");
+        File javaFile = new File(FILE_NAME);
         if (!javaFile.exists()) {
-            System.err.println("File non trovato: " + javaFile.getAbsolutePath());
             return;
         }
 
@@ -100,15 +99,13 @@ public class SingleFileMetricAnalyzer {
             try (FileWriter fw = new FileWriter("ml_results/openjpa_AFMethod2_metrics.csv")) {
                 fw.write("Method;LOC;Cyclomatic;Cognitive;ParameterCount;NestingDepth;StatementCount;ReturnTypeComplexity;LocalVarCount;Smells;SmellTypes\n");
                 for (MethodInfo m : results) {
-                    fw.write(String.format("%s;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%s\"\n",
+                    fw.write(String.format("%s;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%s\"%n",
                             m.getMethodName(), m.getLoc(), m.getCyclomaticComplexity(), m.getCognitiveComplexity(),
                             m.getParameterCount(), m.getNestingDepth(), m.getStatementCount(),
                             m.getReturnTypeComplexity(), m.getLocalVariableCount(), m.getNumberOfSmells(),
                             String.join(";", m.getDetectedSmells())));
                 }
             }
-
-            System.out.println("✓ Analisi completata. File: ml_results/AFMethod_metrics.csv");
 
         } catch (Exception e) {
             e.printStackTrace();

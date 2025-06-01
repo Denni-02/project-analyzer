@@ -9,6 +9,10 @@ import java.util.logging.Level;
 
 public class CorrelationCsvWriter {
 
+    private CorrelationCsvWriter(){
+        // Prevent instantation
+    }
+
     private static final String HEADER = "Feature,Spearman,P-Value,Correlazione";
 
     public static void writeCorrelation(String feature, double spearman, double pValue) {
@@ -20,9 +24,16 @@ public class CorrelationCsvWriter {
 
             if (writeHeader) fw.write(HEADER + "\n");
 
-            String direction = (spearman > 0) ? "positiva" : (spearman < 0) ? "negativa" : "nessuna";
+            String direction;
+            if (spearman > 0) {
+                direction = "positiva";
+            } else if (spearman < 0) {
+                direction = "negativa";
+            } else {
+                direction = "nessuna";
+            }
 
-            fw.write(String.format("%s,%.4f,%.6f,%s\n", feature, spearman, pValue, direction));
+            fw.write(String.format("%s,%.4f,%.6f,%s%n", feature, spearman, pValue, direction));
             fw.close();
 
             if (Configuration.logger.isLoggable(Level.INFO)) {

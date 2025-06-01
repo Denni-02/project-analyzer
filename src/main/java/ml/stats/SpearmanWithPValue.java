@@ -5,6 +5,10 @@ import org.apache.commons.math3.distribution.TDistribution;
 
 public class SpearmanWithPValue {
 
+    private SpearmanWithPValue(){
+        // Prevent instantiation
+    }
+
     public static class Result {
         public final double rho;
         public final double pValue;
@@ -25,7 +29,7 @@ public class SpearmanWithPValue {
 
         int n = x.length;
         double t = rho * Math.sqrt((n - 2.0) / (1 - rho * rho));
-        TDistribution tDist = new TDistribution(n - 2);
+        TDistribution tDist = new TDistribution((double)n - 2);
         double pValue = 2 * (1 - tDist.cumulativeProbability(Math.abs(t)));
 
         return new Result(rho, pValue);

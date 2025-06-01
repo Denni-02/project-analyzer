@@ -10,6 +10,10 @@ import java.util.logging.Level;
 
 public class EvaluationCsvWriter {
 
+    private EvaluationCsvWriter(){
+        // Prevent instantation
+    }
+
     private static final String FOLDER = "ml_results";
     private static final String HEADER = "Classifier,Accuracy,Precision,Recall,F1,AUC,Kappa,TP,TN,FP,FN";
 

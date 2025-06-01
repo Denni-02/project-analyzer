@@ -34,8 +34,6 @@ public class IBkSamplerEvaluation {
             IBk ibk = new IBk(3);
             EvaluationResult result = CrossValidator.evaluateAndWrap("IBk", ibk, sample, SEED, 10, 10);
 
-            Configuration.logger.info("Risultato campione IBk:\n" + result.toString());
-
             // === Scrivi CSV con risultati ===
             EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
 
