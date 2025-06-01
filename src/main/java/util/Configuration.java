@@ -40,7 +40,8 @@ public class Configuration {
     public static final String DEBUG_COMMIT_PATH1 = ConfigurationLoader.get("debug.commit_path1");
     public static final String DEBUG_COMMIT_PATH2 = ConfigurationLoader.get("debug.commit_path2");
 
-    public static final ProjectType SELECTED_PROJECT = ProjectType.BOOKKEEPER; // oppure OPENJPA
+    public static final ProjectType SELECTED_PROJECT = ProjectType.OPENJPA; // oppure OPENJPA
+    //public static final ProjectType SELECTED_PROJECT = ProjectType.BOOKKEEPER;
 
     public static String getProjectName() {
         return (SELECTED_PROJECT == ProjectType.BOOKKEEPER) ? PROJECT1_NAME : PROJECT2_NAME;
@@ -91,5 +92,10 @@ public class Configuration {
     public static String getCommitDebugCsvPath() {
         return (SELECTED_PROJECT == ProjectType.BOOKKEEPER) ? DEBUG_COMMIT_PATH1 : DEBUG_COMMIT_PATH2;
     }
+
+    public static String getCorrelationCsvPath() {
+        return "ml_results/" + getProjectName().toLowerCase() + "_feature_correlation.csv";
+    }
+
 
 }

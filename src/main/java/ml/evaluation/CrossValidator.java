@@ -1,5 +1,6 @@
 package ml.evaluation;
 
+import ml.model.EvaluationResult;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;
@@ -34,4 +35,28 @@ public class CrossValidator {
         }
         return evaluation;
     }
+
+    public static EvaluationResult evaluateAndWrap(String name, Classifier cls, Instances data, int seed, int folds, int repeats) throws Exception {
+        Evaluation eval = evaluate(cls, data, seed, folds, repeats);
+        double[][] cm = eval.confusionMatrix();
+
+        double tp = cm[1][1];
+        double tn = cm[0][0];
+        double fp = cm[0][1];
+        double fn = cm[1][0];
+
+        EvaluationResult result = new EvaluationResult(
+                name,
+                eval.pctCorrect() / 100.0,
+                eval.weightedPrecision(),
+                eval.weightedRecall(),
+                eval.weightedFMeasure(),
+                eval.weightedAreaUnderROC(),
+                eval.kappa()
+        );
+
+        result.setConfusionMatrix(tp, tn, fp, fn);
+        return result;
+    }
+
 }

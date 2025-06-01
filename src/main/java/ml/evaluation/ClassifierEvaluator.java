@@ -1,5 +1,6 @@
 package ml.evaluation;
 
+import ml.model.EvaluationResult;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
 import weka.core.Instances;

@@ -7,10 +7,7 @@ import analyzer.model.MethodInfo;
 import analyzer.model.Release;
 import analyzer.metrics.MethodMetricsExtractor;
 import analyzer.csv.CsvDebugWriter;
-import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.revwalk.RevCommit;
-
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;

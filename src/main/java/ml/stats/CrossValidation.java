@@ -1,17 +1,17 @@
-package ml;
+package ml.stats;
 
 import ml.arff.CSVToARFFConverter;
+import ml.csv.EvaluationCsvWriter;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
 import util.Configuration;
-import ml.model.ClassifierFactory;
-import ml.evaluation.ClassifierEvaluator;
-import ml.evaluation.EvaluationResult;
+import ml.evaluation.ClassifierFactory;
+import ml.model.EvaluationResult;
 import java.util.logging.Level;
 
 
-public class MLApp {
+public class CrossValidation {
 
     private static final String RESULT_LABEL = "Risultato:";
     private static final String RESULT_FORMAT = "%s %s";
@@ -21,13 +21,35 @@ public class MLApp {
             Configuration.logger.info("\nValutazione " + name + " in corso...");
         }
 
-        EvaluationResult result = ClassifierEvaluator.evaluateClassifier(
-                name, classifier, data, 42, 10, 10
+        weka.classifiers.Evaluation eval = ml.evaluation.CrossValidator.evaluate(classifier, data, 42, 10, 10);
+
+        double[][] cm = eval.confusionMatrix();
+        double tp = cm[1][1];
+        double tn = cm[0][0];
+        double fp = cm[0][1];
+        double fn = cm[1][0];
+
+        EvaluationResult result = new EvaluationResult(
+                name,
+                eval.pctCorrect() / 100.0,
+                eval.weightedPrecision(),
+                eval.weightedRecall(),
+                eval.weightedFMeasure(),
+                eval.weightedAreaUnderROC(),
+                eval.kappa()
         );
 
         if (Configuration.logger.isLoggable(Level.INFO) && Configuration.ML_DEBUG) {
             Configuration.logger.info(String.format(RESULT_FORMAT, RESULT_LABEL, result));
+            Configuration.logger.info(String.format("Matrice di confusione [%s]:", name));
+            Configuration.logger.info(String.format("  True Positives (TP): %.0f", tp));
+            Configuration.logger.info(String.format("  True Negatives (TN): %.0f", tn));
+            Configuration.logger.info(String.format("  False Positives (FP): %.0f", fp));
+            Configuration.logger.info(String.format("  False Negatives (FN): %.0f", fn));
         }
+
+        result.setConfusionMatrix(tp, tn, fp, fn);
+        EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
     }
 
 
@@ -59,8 +81,8 @@ public class MLApp {
             }
 
             evaluateAndLog("NaiveBayes", ClassifierFactory.getNaiveBayes(), data);
+            evaluateAndLog("J48", ClassifierFactory.getJ48(), data);
             evaluateAndLog("IBk", ClassifierFactory.getIBk(), data);
-            evaluateAndLog("RandomForest", ClassifierFactory.getRandomForest(), data);
 
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore in MLApp", e);

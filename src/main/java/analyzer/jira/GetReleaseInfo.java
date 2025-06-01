@@ -40,18 +40,6 @@ public class GetReleaseInfo {
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
 
-        // 2. Parsing delle versioni
-        /*for (int i = 0; i < versions.length(); i++) {
-            JSONObject version = versions.getJSONObject(i);
-            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
-                String dateStr = version.getString(RELEASE_DATE_STRING);
-                String name = version.optString("name", "unknown");
-                String id = version.optString("id", "0");
-                addRelease(dateStr, name, id);
-            }
-        }
-
-         */
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
@@ -127,20 +115,7 @@ public class GetReleaseInfo {
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.getProjectName();
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
-
-        // 2. Parsing delle versioni
-        /*for (int i = 0; i < versions.length(); i++) {
-            JSONObject version = versions.getJSONObject(i);
-            if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
-                String dateStr = version.getString(RELEASE_DATE_STRING);
-                String name = version.optString("name", "unknown");
-                String id = version.optString("id", "0");
-                addRelease(dateStr, name, id);
-            }
-        }
-
-         */
-
+        
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {

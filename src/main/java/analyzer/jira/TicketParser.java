@@ -22,6 +22,7 @@ public class TicketParser {
 
     private static final String RELEASE_DATE_STRING = "releaseDate";
     private static final String VERSIONS_STRING = "versions";
+    private static final String CORRECT_NAME = "^\\d+\\.\\d+\\.\\d+$";
 
     public static Map<String, TicketInfo> parseTicketsFromJira() throws JiraParsingException {
         try {
@@ -90,7 +91,7 @@ public class TicketParser {
             JSONObject fv = fixVersions.getJSONObject(j);
             if (fv.has(RELEASE_DATE_STRING) && fv.has("name")) {
                 String fvName = fv.getString("name");
-                if (!fvName.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                if (!fvName.matches(CORRECT_NAME)) {
                     continue;
                 }
 
@@ -118,9 +119,8 @@ public class TicketParser {
         for (int j = 0; j < affectedVersions.length(); j++) {
             JSONObject av = affectedVersions.getJSONObject(j);
             if (av.has("name")) {
-                //ticket.addAffectedVersion(av.getString("name"));
                 String avName = av.getString("name").trim();
-                if (!avName.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                if (!avName.matches(CORRECT_NAME)) {
                     continue;
                 }
                 ticket.addAffectedVersion(avName);
@@ -190,10 +190,9 @@ public class TicketParser {
             if (version.has(RELEASE_DATE_STRING) && version.has("released") && version.getBoolean("released")) {
                 Release r = new Release();
                 String name = version.optString("name", "unknown");
-                if (!name.matches("^\\d+\\.\\d+\\.\\d+$")) {
+                if (!name.matches(CORRECT_NAME)) {
                     continue;
                 }
-                //r.setName(version.optString("name", "unknown"));
                 r.setName(name);
                 r.setId(version.optString("id", "0"));
                 r.setReleaseDate(LocalDate.parse(version.getString(RELEASE_DATE_STRING)));
