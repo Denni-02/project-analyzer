@@ -3,21 +3,20 @@ package ml.stats;
 import ml.csv.EvaluationCsvWriter;
 import ml.model.EvaluationResult;
 import util.Configuration;
-import weka.classifiers.lazy.IBk;
+import weka.classifiers.bayes.NaiveBayes;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.ConverterUtils.DataSource;
-
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Random;
 import java.util.logging.Level;
 
 /**
- * Valutazione del classificatore IBk su un sottoinsieme temporale (primi 20.000 metodi) del dataset OpenJPA,
+ * Valutazione del classificatore Naive su un sottoinsieme temporale (primi 20.000 metodi) del dataset OpenJPA,
  * con opzioni configurabili per Feature Selection (inclusa rimozione di ReleaseID) e SMOTE.
  */
-public class IBkSamplerEvaluation {
+public class NaiveSamplerEvaluation {
 
     private static final int SAMPLE_SIZE = 20000;
 
@@ -66,10 +65,9 @@ public class IBkSamplerEvaluation {
                 }
             }
 
+            String runName = String.format("NaiveBayes_FS=%s_SMOTE=%s", applyFeatureSelection, applySmote);
 
-            String runName = String.format("IBk_FS=%s_SMOTE=%s", applyFeatureSelection, applySmote);
-
-            IBk ibk = new IBk(3);
+            NaiveBayes naiveBayes = new NaiveBayes();
 
             // Intestazione CSV fold-wise se necessario
             try (PrintWriter pw = new PrintWriter(new FileWriter("csv_output/fold_results_openjpa.csv"))) {
@@ -77,7 +75,7 @@ public class IBkSamplerEvaluation {
             }
 
             EvaluationResult result = CrossValidatorWithPreprocessing.evaluateAndWrap(
-                    runName, ibk, sample, 42, 10, 10, applyFeatureSelection, applySmote
+                    runName, naiveBayes, sample, 42, 10, 10, applyFeatureSelection, applySmote
             );
 
             Configuration.logger.info("Valutazione completata: " + result);

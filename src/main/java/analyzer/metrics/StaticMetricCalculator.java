@@ -8,8 +8,16 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.type.Type;
 
+// Questa classe calcola le metriche statiche per un emtodo Java
 public class StaticMetricCalculator {
 
+
+    /*
+     Conta le righe effettive di codice, escludendo:
+     - parentesi graffe isolate
+     - righe vuote
+     - commenti inline (//...)
+     */
     public int calculateLoc(MethodDeclaration method) {
         String[] lines = method.toString().split("\\r?\\n");
         int loc = 0;
@@ -22,6 +30,13 @@ public class StaticMetricCalculator {
         return loc;
     }
 
+    /*
+    Calcola la complessita ciclomatica, parte da 1 e aggiunge:
+    - if, for, foreach, while, do
+    - case nei switch
+    - catch
+    - ternari (ConditionalExpr)
+     */
     public int calculateCyclomaticComplexity(MethodDeclaration method) {
         int complexity = 1;
         complexity += method.findAll(IfStmt.class).size();
@@ -35,6 +50,11 @@ public class StaticMetricCalculator {
         return complexity;
     }
 
+    /*
+    Calcola la complessita cognitiva, parte da zero e:
+    - somma i costrutti logici come sopra,
+    - penalizza la profondità del nesting (solo se maggiore di 1)
+     */
     public int calculateCognitiveComplexity(MethodDeclaration method) {
         int complexity = 0;
         complexity += method.findAll(IfStmt.class).size();
@@ -49,14 +69,20 @@ public class StaticMetricCalculator {
         return complexity + nestingPenalty;
     }
 
+    // Conta il numero di parametri del metodo
     public int calculateParameterCount(MethodDeclaration method) {
         return method.getParameters().size();
     }
 
+    //  Misura la profondità massima delle strutture di controllo annidate
     public int calculateNestingDepth(MethodDeclaration method) {
         return calculateNestingDepthRecursive(method, 0);
     }
 
+    /*
+    - Aumenta il livello per ogni costrutto: if, for, while, switch, try, catch, ecc.
+    - Esplora tutti i sotto-nodi ricorsivamente
+     */
     private int calculateNestingDepthRecursive(Node node, int currentDepth) {
         int maxDepth = currentDepth;
 
@@ -81,16 +107,21 @@ public class StaticMetricCalculator {
         return maxDepth;
     }
 
+    // Conta il numero diretto di statement
     public int calculateStatementCount(MethodDeclaration method) {
         return method.getBody().map(b -> b.getStatements().size()).orElse(0);
     }
 
-
+    // Calcola la complessità del tipo restituito
     public int calculateReturnTypeComplexity(MethodDeclaration method) {
         Type returnType = method.getType();
         return computeTypeComplexity(returnType);
     }
 
+    /*
+    1 per tipi primitivi o nominali semplici
+    +1 per ogni array o parametro generico annidato
+     */
     private int computeTypeComplexity(Type type) {
         if (type.isPrimitiveType()) return 1;
         if (type.isArrayType()) return 1 + computeTypeComplexity(type.asArrayType().getComponentType());
@@ -112,7 +143,7 @@ public class StaticMetricCalculator {
         return 1;
     }
 
-
+    //  Conta le variabili locali dichiarate nel metodo, escludendo i parametri
     public int calculateLocalVariableCount(MethodDeclaration method) {
         return method.findAll(VariableDeclarator.class).stream()
                 .filter(v -> v.getParentNode().isPresent() &&

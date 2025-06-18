@@ -3,9 +3,10 @@ package ml.stats;
 import ml.csv.EvaluationCsvWriter;
 import ml.model.EvaluationResult;
 import util.Configuration;
-import weka.classifiers.lazy.IBk;
+import weka.classifiers.trees.RandomForest;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
 
 import java.io.FileWriter;
@@ -14,12 +15,13 @@ import java.util.Random;
 import java.util.logging.Level;
 
 /**
- * Valutazione del classificatore IBk su un sottoinsieme temporale (primi 20.000 metodi) del dataset OpenJPA,
- * con opzioni configurabili per Feature Selection (inclusa rimozione di ReleaseID) e SMOTE.
+ * Valutazione del classificatore RandomForest su un sottoinsieme temporale del dataset OpenJPA,
+ * con configurazioni opzionali di Feature Selection e SMOTE. Stampa tutte le metriche per fold.
  */
-public class IBkSamplerEvaluation {
+public class RandomForestSamplerEvaluation {
 
-    private static final int SAMPLE_SIZE = 20000;
+    private static final int SAMPLE_SIZE = 15000;
+    private static final int SEED = 42;
 
     public static void main(String[] args) {
         try {
@@ -28,12 +30,13 @@ public class IBkSamplerEvaluation {
 
             String project = Configuration.SELECTED_PROJECT.toString().toLowerCase();
             if (!project.equals("openjpa")) {
-                Configuration.logger.severe("Questa classe è progettata solo per OpenJPA.");
+                Configuration.logger.severe("Questa classe è progettata solo per il progetto OpenJPA.");
                 return;
             }
 
-            String inputPath = "csv_output/" + project + "_output.arff";
-            DataSource source = new DataSource(inputPath);
+            // Caricamento dataset
+            String reducedPath = "csv_output/" + project + "_output.arff";
+            DataSource source = new DataSource(reducedPath);
             Instances data = source.getDataSet();
             if (data.classIndex() == -1)
                 data.setClassIndex(data.numAttributes() - 1);
@@ -66,25 +69,30 @@ public class IBkSamplerEvaluation {
                 }
             }
 
+            // Configura RandomForest leggero
+            RandomForest rf = new RandomForest();
+            String[] options = Utils.splitOptions("-I 30 -depth 12 -M 50 -K 0 -S 1 -num-slots 1");
+            rf.setOptions(options);
+            rf.setBagSizePercent(40);
+            Configuration.logger.info("RandomForest configurato con 30 alberi, profondità max 12, 1 thread");
 
-            String runName = String.format("IBk_FS=%s_SMOTE=%s", applyFeatureSelection, applySmote);
+            String runName = String.format("RandomForest_FS=%s_SMOTE=%s", applyFeatureSelection, applySmote);
 
-            IBk ibk = new IBk(3);
-
-            // Intestazione CSV fold-wise se necessario
+            // Creazione intestazione CSV fold_results se necessario
             try (PrintWriter pw = new PrintWriter(new FileWriter("csv_output/fold_results_openjpa.csv"))) {
                 pw.println("Classifier,FS,SMOTE,Seed,Repeat,Fold,Accuracy,Precision,Recall,F1,AUC,Kappa,NPofB20");
             }
 
             EvaluationResult result = CrossValidatorWithPreprocessing.evaluateAndWrap(
-                    runName, ibk, sample, 42, 10, 10, applyFeatureSelection, applySmote
+                    runName, rf, sample, SEED, 10, 10, applyFeatureSelection, applySmote
             );
 
             Configuration.logger.info("Valutazione completata: " + result);
             EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
 
         } catch (Exception e) {
-            Configuration.logger.log(Level.SEVERE, "Errore durante la valutazione IBk campionata temporalmente", e);
+            Configuration.logger.log(Level.SEVERE, "Errore durante la valutazione RandomForest con sampling OpenJPA", e);
+            e.printStackTrace();
         }
     }
 }

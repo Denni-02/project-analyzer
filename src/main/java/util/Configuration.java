@@ -9,7 +9,6 @@ public class Configuration {
     public static final boolean BASIC_DEBUG = true;
     public static final boolean ACTIVATE_LOG = false;
     public static final boolean LABELING_DEBUG = false;
-    public static final boolean ML_DEBUG = true;
 
     public static final Logger logger = Logger.getLogger(Configuration.class.getName());
 
@@ -40,8 +39,9 @@ public class Configuration {
     public static final String DEBUG_COMMIT_PATH1 = ConfigurationLoader.get("debug.commit_path1");
     public static final String DEBUG_COMMIT_PATH2 = ConfigurationLoader.get("debug.commit_path2");
 
-    public static final ProjectType SELECTED_PROJECT = ProjectType.OPENJPA;
-    //public static final ProjectType SELECTED_PROJECT = ProjectType.BOOKKEEPER;
+
+    //public static final ProjectType SELECTED_PROJECT = ProjectType.OPENJPA;
+    public static final ProjectType SELECTED_PROJECT = ProjectType.BOOKKEEPER;
 
     public static String getProjectName() {
         return (SELECTED_PROJECT == ProjectType.BOOKKEEPER) ? PROJECT1_NAME : PROJECT2_NAME;

@@ -25,15 +25,17 @@ import java.util.logging.Level;
 
 public class MethodMetricsExtractor {
 
-    private final JavaParser parser = new JavaParser();
-    private final List<MethodInfo> methodInfos = new ArrayList<>();
+    private final JavaParser parser = new JavaParser(); // parser per albero file java
+    private final List<MethodInfo> methodInfos = new ArrayList<>(); // lista info metodi analizzati
     private String currentRelease;
     private LocalDate currentReleaseDate;
-    private final StaticMetricCalculator staticCalc = new StaticMetricCalculator();
     private final HistoricalMetricExtractor historicalExtractor;
 
+    // Inizializza calcolatore metriche statiche
+    private final StaticMetricCalculator staticCalc = new StaticMetricCalculator();
 
     public MethodMetricsExtractor(GitRepository gitRepository) {
+        // Inizializza calcolatore metriche storiche
         this.historicalExtractor = new HistoricalMetricExtractor(gitRepository);
     }
 
@@ -49,7 +51,12 @@ public class MethodMetricsExtractor {
         this.currentReleaseDate = currentReleaseDate;
     }
 
-    // Esplora i file nella cartella filtrando quelli .java e chiamando analyzeFile()
+    /* Questo metodo:
+     - Scorre tutti i file .java nel progetto (dopo il checkout nel main di dataset app)
+     - Per farlo esclude alcune directory da non considerare
+     - Per ogni file, chiama analyzeFile() per analizzare i metodi
+     - Alla fine chiama l'analisi storica sui metodi trovati
+     */
     public void analyzeProject(String projectPath, Release currentRelease) {
 
         int fileCount = 0;
@@ -86,52 +93,54 @@ public class MethodMetricsExtractor {
     private void analyzeFile(Path path) {
 
         try {
+
+            // Parsing del file per ottenere struttura ad albero del source code (AST)
             CompilationUnit cu = parser.parse(path).getResult().orElse(null);
             if (cu == null) return;
 
+            // Cerca dichiarazioni di metodi nel file
             List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
             if (methods.isEmpty()) return;
 
-            // PMD config
+            // Configura PMD per analisi smells
             LanguageVersion javaVersion = LanguageRegistry.PMD.getLanguageVersionById("java", "1.6");
-
             Files.readString(path, StandardCharsets.UTF_8);
-
             PMDConfiguration config = new PMDConfiguration();
             config.setDefaultLanguageVersion(javaVersion);
-            config.addRuleSet("category/java/design.xml");
-            config.addRuleSet("category/java/bestpractices.xml");
+            config.addRuleSet("category/java/design.xml"); // regole di design
+            config.addRuleSet("category/java/bestpractices.xml"); // best practices
             config.addInputPath(path);
 
-            // Analizza il file intero con PMD
+            // Avvia PMD
             try (PmdAnalysis pmd = PmdAnalysis.create(config)) {
 
                 Report report = pmd.performAnalysisAndCollectReport();
 
-                // Per ogni metodo, filtra gli smell che ci cadono dentro
+                // Loop su ogni metodo
                 for (MethodDeclaration method : methods) {
-                    MethodInfo info = analyzeMethod(method, path);
 
+                    // Calcolo metriche statiche
+                    MethodInfo info = analyzeMethod(method, path);
                     if (info == null) continue;
 
+                    // Salva informazioni su dove inizia e finisce il metodo
                     int start = method.getBegin().map(p -> p.line).orElse(-1);
                     int end = method.getEnd().map(p -> p.line).orElse(-1);
-
                     info.setStartLine(start);
                     info.setEndLine(end);
 
-
-                    //AGGIUNTA PER DEBUG -------------------------------------------------------------------------------
+                    // Salva codice del metodo (utile per refactoring)
                     info.setMethodCode(method.toString());
 
+                    // Filtra tutti i code smells che cadono dentro il metodo e ne restituisce il nome
                     List<String> smellNames = report.getViolations().stream()
                             .filter(v -> v.getBeginLine() >= start && v.getBeginLine() <= end)
-                            .map(v -> v.getRule().getName()) // oppure getRule().toString()
+                            .map(v -> v.getRule().getName())
                             .distinct()
                             .toList();
 
-                    info.setDetectedSmells(smellNames);
-                    info.setNumberOfSmells(smellNames.size()); //4. Number of Code Smells
+                    info.setDetectedSmells(smellNames); // Imposta nome smell trovati nel metodo
+                    info.setNumberOfSmells(smellNames.size()); // Imposta numero di code smell per il databset
 
                     methodInfos.add(info);
 
@@ -155,26 +164,26 @@ public class MethodMetricsExtractor {
 
         try {
 
+            // Oggetto che contiene dati e valori delle metriche di un metodo
             MethodInfo info = new MethodInfo();
 
-            info.setProjectName(Configuration.getProjectColumn());
-            info.setMethodName(path.toString() + "/" + method.getNameAsString());
-            info.setReleaseId(currentRelease);
-            info.setReleaseDate(currentReleaseDate);
+            info.setProjectName(Configuration.getProjectColumn()); // nome progetto
+            info.setMethodName(path.toString() + "/" + method.getNameAsString()); // path completo + nome metodo
+            info.setReleaseId(currentRelease); // release ID
+            info.setReleaseDate(currentReleaseDate); // data della release
 
 
-            // Metriche statiche principali:
+            // Metriche statiche:
+            info.setLoc(staticCalc.calculateLoc(method)); // LOC
+            info.setCyclomaticComplexity(staticCalc.calculateCyclomaticComplexity(method)); // Cyclomatic Complexity
+            info.setCognitiveComplexity(staticCalc.calculateCognitiveComplexity(method)); // Cognitive Complexity
+            info.setParameterCount(staticCalc.calculateParameterCount(method)); // Parameter Count
+            info.setNestingDepth(staticCalc.calculateNestingDepth(method)); // Nesting Depth
+            info.setStatementCount(staticCalc.calculateStatementCount(method)); // Statement Count
+            info.setReturnTypeComplexity(staticCalc.calculateReturnTypeComplexity(method)); // Return Type Complexity
+            info.setLocalVariableCount(staticCalc.calculateLocalVariableCount(method)); // Local Variable Count
 
-            info.setLoc(staticCalc.calculateLoc(method)); // 1. LOC
-            info.setCyclomaticComplexity(staticCalc.calculateCyclomaticComplexity(method)); // 2. Cyclomatic Complexity
-            info.setCognitiveComplexity(staticCalc.calculateCognitiveComplexity(method)); // 3. Cognitive Complexity
-            info.setParameterCount(staticCalc.calculateParameterCount(method)); // 5. Parameter Count
-            info.setNestingDepth(staticCalc.calculateNestingDepth(method)); // 6. Nesting Depth
-            info.setStatementCount(staticCalc.calculateStatementCount(method));
-            info.setReturnTypeComplexity(staticCalc.calculateReturnTypeComplexity(method));
-            info.setLocalVariableCount(staticCalc.calculateLocalVariableCount(method));
-
-            // Target
+            // Target, per ora impstiamo sempre false
             info.setBugginess(false);
 
             return info;
@@ -191,6 +200,7 @@ public class MethodMetricsExtractor {
         csvHandler.writeCsv(outputPath, methodInfos);
     }
 
+    // Metodo per debug
     private void logDebugSample(int index, MethodInfo sampled, String debugPath) {
         try (FileWriter fw = new FileWriter(debugPath, true)) {
             fw.write("========== METHOD #" + index + " ==========\n");

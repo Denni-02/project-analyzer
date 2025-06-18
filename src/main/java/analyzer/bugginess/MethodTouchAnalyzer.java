@@ -19,14 +19,17 @@ public class MethodTouchAnalyzer {
         this.repo = repo;
     }
 
+    // Controlla se un commit ha effettivamente modificato uno o più metodi
     public Set<MethodInfo> getTouchedMethods(RevCommit commit, String filePath, List<MethodInfo> candidateMethods) {
         Set<MethodInfo> touched = new HashSet<>();
 
         try {
 
+            // Se è un root commit, lo salta
             if (commit.getParentCount() == 0) return touched;
-            RevCommit parent = repo.parseCommit(commit);
 
+            // Costruisce il diff tra commit e il suo parent
+            RevCommit parent = repo.parseCommit(commit);
             try (DiffFormatter df = new DiffFormatter(DisabledOutputStream.INSTANCE)) {
                 df.setRepository(repo.getGit().getRepository());
                 df.setDetectRenames(true);
@@ -34,12 +37,15 @@ public class MethodTouchAnalyzer {
 
                 List<DiffEntry> diffs = df.scan(parent.getTree(), commit.getTree());
 
+                // Per ogni file modificato nel commit
                 for (DiffEntry diff : diffs) {
                     String changedFile = diff.getNewPath();
-                    if (!changedFile.equals(filePath)) continue;
+                    if (!changedFile.equals(filePath)) continue; // Se il file non è filePath, lo salta
 
+                    // Ogni Edit rappresenta un blocco di righe aggiunte/modificate
                     List<Edit> edits = df.toFileHeader(diff).toEditList();
 
+                    // Per ogni metodo nel file, controlla se una modifica (Edit) tocca le righe del metodo
                     for (MethodInfo method : candidateMethods) {
                         int start = method.getStartLine();
                         int end = method.getEndLine();

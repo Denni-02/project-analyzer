@@ -41,19 +41,26 @@ public class BugLinker {
         CsvTicketCommitWriter.write(Configuration.getDebugTicketCommitsPath(), tickets);
     }
 
+    // Trova tutti i commit che contengono l’ID del ticket nel messaggio di commit
     public void linkCommitsToTickets(Map<String, TicketInfo> tickets) throws TicketLinkageException {
 
         try {
-            for (Map.Entry<String, TicketInfo> entry : tickets.entrySet()) {
-                String ticketId = entry.getKey();
-                TicketInfo ticket = entry.getValue();
 
+            // Per ogni ticket JIRA (già filtrato da TicketParser)
+            for (Map.Entry<String, TicketInfo> entry : tickets.entrySet()) {
+                String ticketId = entry.getKey(); // ottieni id (es. BOOKKEEPER-123)
+                TicketInfo ticket = entry.getValue(); // ottieni info ticket
+
+                //  Cerca tutti i commit il cui messaggio contiene esattamente ticketId
                 Iterable<RevCommit> commits = repo.getCommitsByMessageContaining(ticketId);
 
                 for (RevCommit commit : commits) {
+
+                    // Collega commit al ticket
                     String commitHash = commit.getName();
                     ticket.addCommitId(commitHash);
 
+                    // Salva i nomi dei file toccati nel commit nel TicketInfo
                     Set<String> javaFiles = repo.getTouchedJavaFiles(commit);
                     for (String file : javaFiles) {
                         ticket.addFixedFile(file);
@@ -65,15 +72,23 @@ public class BugLinker {
         }
     }
 
+    /*
+    Euristica: commit senza linkage avvenuti nello stesso intervallo temporale [OV, FV],
+    toccando file già associati al bug,  e scritti dallo stesso autore,
+    sono stati collegati come contributi probabili alla fix
+     */
     public void applyMissingCommitLinkageHeuristic(Map<String, TicketInfo> tickets) throws TicketLinkageException {
 
         try {
             for (TicketInfo ticket : tickets.values()) {
+
+                // Applica l'euristica solo se abbiamo FV e OV
                 if (ticket.getFixVersion() == null || ticket.getOpeningVersion() == null) continue;
 
                 LocalDate start = ticket.getOpeningVersion();
                 LocalDate end = ticket.getFixVersion();
 
+                // Ottiene tutti i commit avvenuti tra la data di apertura e la data di fix del ticket
                 List<RevCommit> candidateCommits = repo.getCommitsBetweenDates(start, end);
 
                 matchingAuthor(candidateCommits, ticket);
@@ -83,20 +98,23 @@ public class BugLinker {
         }
     }
 
+    // Verifica se l'autore è lo stesso e fa altri check
     public void matchingAuthor(List<RevCommit> candidateCommits, TicketInfo ticket) throws GitOperationException, IOException {
         for (RevCommit commit : candidateCommits) {
             // Se già collegato via messaggio, salta
             if (ticket.getCommitIds().contains(commit.getName())) continue;
 
+            // Recupera i file toccati da questo commit
             Set<String> touchedFiles = repo.getTouchedJavaFiles(commit);
 
             for (String file : touchedFiles) {
-                // se il file è stato toccato da commit già collegati
+                // Verifica se il  file toccato dal commit è uno dei file già associati al ticket
                 boolean isFileMatch = ticket.getFixedFiles().contains(file);
 
-                // se autore combacia con commit già collegato
+                // Verifica se autore combacia con commit già collegato
                 boolean isAuthorMatch = repo.isAuthorInTicket(commit, ticket);
 
+                // Se entrambi i match sono veri collega il commit al ticket, anche senza ID ticket nel messaggio
                 if (isFileMatch && isAuthorMatch) {
                     ticket.addCommitId(commit.getName());
                     for (String f : touchedFiles) {

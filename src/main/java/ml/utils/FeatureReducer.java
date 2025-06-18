@@ -1,4 +1,4 @@
-package ml.stats;
+package ml.utils;
 
 import weka.attributeSelection.AttributeSelection;
 import weka.attributeSelection.InfoGainAttributeEval;
@@ -12,7 +12,6 @@ import util.Configuration;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.util.logging.Level;
 
 public class FeatureReducer {

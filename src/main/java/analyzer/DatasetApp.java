@@ -24,21 +24,32 @@ import analyzer.csv.CsvHandler;
 
 public class DatasetApp {
 
+    /*
+    Questa classe contiene il metodo main che va a gestire il flusso di esecuzione
+    necessario a realizzare la milestone 1, quindi ha creare i dataset richiesti
+    */
+
+
     public static void main(String[] args) {
 
         if (!Configuration.ACTIVATE_LOG) {
             // Disabilita i log di PMD
             ch.qos.logback.classic.Logger pmdLogger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("net.sourceforge.pmd");
             pmdLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
-            // Disabilita log DEBUG di JGit
+            // Disabilita log di JGit
             ch.qos.logback.classic.Logger jgitLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.eclipse.jgit");
             jgitLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
         }
 
         try {
+
+            // Lista dei metodi che verranno analizzati
             List<MethodInfo> methods;
+
+            // Recupera primo 33% release del progetto
             List<Release> datasetReleases = GetReleaseInfo.getDatasetReleases();
 
+            // Mappa per asscoaire le date delle release agli ID
             Map<String, LocalDate> releaseDatesById = new HashMap<>();
             for (Release r : datasetReleases) {
                 releaseDatesById.put(r.getName(), r.getReleaseDate());
@@ -48,7 +59,7 @@ public class DatasetApp {
             GitRepository repo = new GitRepository(Configuration.getProjectPath());
             MethodMetricsExtractor extractor = new MethodMetricsExtractor(repo);
 
-            //Struttura dati per commit
+            // Inizializza lista dei commit selezionati per ogni release (a cui fare checkout)
             List<Commit> selectedCommits = new ArrayList<>();
 
             if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi delle metriche statiche avviata:");
@@ -73,6 +84,7 @@ public class DatasetApp {
                     Configuration.logger.info(" → Messaggio: " + commit.getShortMessage());
                 }
 
+                // Salva info sul commit
                 Commit c = new Commit();
                 c.setId(commit.getName());
                 c.setAuthor(commit.getAuthorIdent().getName());
@@ -81,37 +93,44 @@ public class DatasetApp {
                 c.setFilesTouched(null);
                 selectedCommits.add(c);
 
-               repo.checkoutCommit(commit); // Fai il checkout al commit
+                // Fai il checkout al commit
+                repo.checkoutCommit(commit);
 
-                extractor.setCurrentRelease(rel.getName()); // Imposta release corrente
+                // Imposta la release in corso
+                extractor.setCurrentRelease(rel.getName());
                 extractor.setCurrentReleaseDate(rel.getReleaseDate());
+
+                // Analizza il progetto per la release corrente e calcola le metriche
                 extractor.analyzeProject(Configuration.getProjectPath(), rel);
 
+                // Salva una versione CSV dei commit a cui facciamo il checkout in ogni release
                 CsvDebugWriter.writeCommitCsv(Configuration.getCommitDebugCsvPath(), selectedCommits);
             }
 
-            // Scrivi i risultati finali nel file CSV
+            // Scrivi i risultati nel file CSV
             extractor.exportResults(Configuration.getOutputCsvPath());
 
             // Chiude correttamente la connessione con la repository Git
             repo.close();
+
+            // Ottieni info metodi analizzati
             methods = extractor.getAnalyzedMethods();
 
             if (Configuration.BASIC_DEBUG) Configuration.logger.info("Inizio fase di etichettatura ...");
 
-            // 1. Ticket da JIRA
+            // Estrai ticket da JIRA
             Map<String, TicketInfo> tickets = TicketParser.parseTicketsFromJira();
 
-            // 2. Collega commit → ticket
+            // Collega commit ai ticket
             BugLinker linker = new BugLinker(repo);
             linker.linkCommitsToTickets(tickets);
             linker.applyMissingCommitLinkageHeuristic(tickets);
 
-            // 3. Etichetta i metodi
+            // Etichetta i metodi usando tutti i dati a disposizione
             List<Release> allReleases = GetReleaseInfo.getAllReleases();
             BugLabeler.labelMethods(methods, tickets, repo, allReleases);
 
-            // 4. Riscrivi CSV aggiornato
+            // Riscrivi CSV aggiornato
             CsvHandler csvHandler = new CsvHandler();
             csvHandler.writeCsv(Configuration.getOutputCsvPath(), methods);
 

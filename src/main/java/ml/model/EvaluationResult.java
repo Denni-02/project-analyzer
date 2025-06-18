@@ -13,6 +13,7 @@ public class EvaluationResult {
     private double tn;
     private double fp;
     private double fn;
+    private double npofb20;
 
     public EvaluationResult(String name, double accuracy, double precision, double recall, double f1, double auc, double kappa) {
         this.classifierName = name;
@@ -24,13 +25,6 @@ public class EvaluationResult {
         this.kappa = kappa;
     }
 
-    public void setConfusionMatrix(double tp, double tn, double fp, double fn) {
-        this.tp = tp;
-        this.tn = tn;
-        this.fp = fp;
-        this.fn = fn;
-    }
-
     public double getTp() { return tp; }
     public double getTn() { return tn; }
     public double getFp() { return fp; }
@@ -38,10 +32,6 @@ public class EvaluationResult {
 
     public String getClassifierName() {
         return classifierName;
-    }
-
-    public double getAccuracy() {
-        return accuracy;
     }
 
     public double getPrecision() {
@@ -64,10 +54,21 @@ public class EvaluationResult {
         return kappa;
     }
 
+    public double getNpofb20() {
+        return npofb20;
+    }
+
+    public void setNpofb20(double npofb20) {
+        this.npofb20 = npofb20;
+    }
+
 
     @Override
     public String toString() {
-        return String.format("[%s] Acc: %.4f  Prec: %.4f  Rec: %.4f  F1: %.4f  AUC: %.4f  Kappa: %.4f",
-                classifierName, accuracy, precision, recall, f1, auc, kappa);
+        return String.format("[%s] Acc: %.4f  Prec: %.4f  Rec: %.4f  F1: %.4f  AUC: %.4f  Kappa: %.4f  NPofB20=%.3f",
+                classifierName, accuracy, precision, recall, f1, auc, kappa, npofb20);
+
     }
+
+
 }

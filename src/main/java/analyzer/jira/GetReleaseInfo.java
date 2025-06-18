@@ -17,9 +17,13 @@ import util.Configuration;
 
 public class GetReleaseInfo {
 
-    private static final ArrayList<LocalDateTime> releases = new ArrayList<>();
-    private static final HashMap<LocalDateTime, String> releaseNames = new HashMap<>();
-    private static final HashMap<LocalDateTime, String> releaseIDs = new HashMap<>();
+    /*
+    Questa classe di occupa di gestire il recupero delle release del progetto da JIRA
+     */
+
+    private static final ArrayList<LocalDateTime> releases = new ArrayList<>(); // lista date
+    private static final HashMap<LocalDateTime, String> releaseNames = new HashMap<>(); // mappa date --> nome release
+    private static final HashMap<LocalDateTime, String> releaseIDs = new HashMap<>(); // mappa date --> id release
     private static final String RELEASE_DATE_STRING = "releaseDate";
     private static final String RELEASE_STRING = "released" ;
 
@@ -27,7 +31,7 @@ public class GetReleaseInfo {
         // Prevent instantiation
     }
 
-    // Ottiene la lista di release (primo 33%) dal progetto JIRA
+    // Ottieni la lista di release (primo 33%) del progetto
     public static List<Release> getDatasetReleases() throws IOException, JSONException {
         releases.clear();
         releaseNames.clear();
@@ -35,28 +39,32 @@ public class GetReleaseInfo {
 
         if (Configuration.BASIC_DEBUG) Configuration.logger.info("Recupero release da JIRA per il progetto " + Configuration.getProjectName());
 
-        // 1. Richiesta HTTP
+        // Richiesta HTTP per ottenere il json delle release del progetto
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.getProjectName();
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
 
+        /*
+        Filtra versioni valide:
+        - versioni rilascaiate (released == true)
+        - con data definita (releaseDate)
+        - release name con formato X.Y.Z (es. 1.2.3)
+         */
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
                 String name = version.optString("name", "unknown");
-
                 if (!name.matches("^\\d+\\.\\d+\\.\\d+$")) continue;
-
                 String dateStr = version.getString(RELEASE_DATE_STRING);
                 String id = version.optString("id", "0");
                 addRelease(dateStr, name, id);
             }
         }
 
-        // 3. Ordina
+        // Ordina le release in base alle date
         releases.sort(Comparator.naturalOrder());
 
-        // 4. Prendi il primo 33%
+        // Prendi il primo 33%
         int cutoff = (int) Math.ceil(releases.size() * 0.33);
         List<LocalDateTime> selected = releases.subList(0, cutoff);
 
@@ -65,7 +73,7 @@ public class GetReleaseInfo {
             Configuration.logger.info("Release selezionate (33%): " + selected.size());
         }
 
-        // 5. Costruisci oggetti Release
+        // Costruisci oggetti Release
         List<Release> allReleases = new ArrayList<>();
         List<Release> selectedReleases = new ArrayList<>();
 
@@ -82,14 +90,14 @@ public class GetReleaseInfo {
             }
         }
 
-        // 6. Scrivi su CSV tramite CsvDebugWriter
+        // Scrivi su CSV tramite CsvDebugWriter per stampare tutte le release e quelle selezionate
         CsvDebugWriter.writeReleaseCsv(
                 Configuration.getDebugVersionInfoPath(),
                 allReleases,
                 selectedReleases
         );
 
-        // 7. Converti in List<Release>
+        // Genera output List<Release>
         List<Release> output = new ArrayList<>();
         for (LocalDateTime dt : selected) {
             Release r = new Release();
@@ -103,6 +111,7 @@ public class GetReleaseInfo {
         return output;
     }
 
+    // Ottieni la lista di release (tutte) del progetto
     public static List<Release> getAllReleases() throws IOException, JSONException {
         releases.clear();
         releaseNames.clear();
@@ -111,11 +120,12 @@ public class GetReleaseInfo {
         if (Configuration.LABELING_DEBUG)
             Configuration.logger.info("Recupero TUTTE le release da JIRA per il progetto " + Configuration.getProjectName());
 
-        // 1. Richiesta HTTP
+        // Richiesta HTTP
         String url = "https://issues.apache.org/jira/rest/api/2/project/" + Configuration.getProjectName();
         JSONObject json = readJsonFromUrl(url);
         JSONArray versions = json.getJSONArray("versions");
-        
+
+        // Filtraggio valide
         for (int i = 0; i < versions.length(); i++) {
             JSONObject version = versions.getJSONObject(i);
             if (version.has(RELEASE_DATE_STRING) && version.has(RELEASE_STRING) && version.getBoolean(RELEASE_STRING)) {
@@ -129,8 +139,10 @@ public class GetReleaseInfo {
             }
         }
 
+        // Ordina
         releases.sort(Comparator.naturalOrder());
 
+        // Crea lista
         List<Release> all = new ArrayList<>();
         for (LocalDateTime dt : releases) {
             Release r = new Release();
@@ -145,7 +157,7 @@ public class GetReleaseInfo {
     }
 
 
-    // Aggiunge una release alla struttura dati
+    // Aggiunge una release e i dati associati alle strutture definite all'inizio della classe
     private static void addRelease(String strDate, String name, String id) {
         LocalDate date = LocalDate.parse(strDate);
         LocalDateTime dateTime = date.atStartOfDay();
@@ -156,7 +168,7 @@ public class GetReleaseInfo {
         releaseIDs.put(dateTime, id);
     }
 
-    // Effettua richiesta HTTP e converte in JSONObject
+    // Effettua richiesta HTTP e converte in JSONObject il risultato ottenuto
     private static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
         InputStream is = new URL(url).openStream();
         try (BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")))) {

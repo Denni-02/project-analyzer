@@ -14,44 +14,32 @@ public class EvaluationCsvWriter {
         // Prevent instantation
     }
 
-    private static final String FOLDER = "ml_results";
-    private static final String HEADER = "Classifier,Accuracy,Precision,Recall,F1,AUC,Kappa,TP,TN,FP,FN";
-
     public static void write(String projectName, EvaluationResult result) {
-        try {
-            // Crea directory se non esiste
-            File dir = new File(FOLDER);
-            if (!dir.exists()) dir.mkdirs();
+        String outputFile = "ml_results/" + projectName.toLowerCase() + "_summary_results.csv";
+        boolean fileExists = new File(outputFile).exists();
 
-            File file = new File(dir, projectName + "_cross_validation_results.csv");
-            boolean writeHeader = !file.exists();
-
-            FileWriter fw = new FileWriter(file, true); // append mode
-
-            if (writeHeader) fw.write(HEADER + "\n");
-
-            fw.write(String.format("%s,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.0f,%.0f,%.0f,%.0f\n",
-                    result.getClassifierName(),
-                    result.getAccuracy(),
-                    result.getPrecision(),
-                    result.getRecall(),
-                    result.getF1(),
-                    result.getAuc(),
-                    result.getKappa(),
-                    result.getTp(),
-                    result.getTn(),
-                    result.getFp(),
-                    result.getFn()
-            ));
-
-            fw.close();
-
-            if (Configuration.logger.isLoggable(Level.INFO)) {
-                Configuration.logger.info("Risultati salvati su file: " + file.getAbsolutePath());
+        try (FileWriter writer = new FileWriter(outputFile, true)) {
+            if (!fileExists) {
+                writer.write("Classifier,FeatureSelection,SMOTE,Precision,Recall,AUC,Kappa,NPofB20\n");
             }
 
+            String[] tokens = result.getClassifierName().split("_");
+            String classifier = tokens[0];
+            String fs = tokens[1].split("=")[1];
+            String smote = tokens[2].split("=")[1];
+
+            writer.write(String.format(
+                    "%s,%s,%s,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+                    classifier, fs, smote,
+                    result.getPrecision(),
+                    result.getRecall(),
+                    result.getAuc(),
+                    result.getKappa(),
+                    result.getNpofb20()
+            ));
         } catch (IOException e) {
-            Configuration.logger.log(Level.SEVERE, "Errore nella scrittura CSV dei risultati", e);
+            Configuration.logger.severe("Errore durante la scrittura del CSV di riepilogo: " + e.getMessage());
         }
     }
+
 }

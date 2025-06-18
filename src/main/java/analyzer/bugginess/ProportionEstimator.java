@@ -19,24 +19,28 @@ public class ProportionEstimator {
     private double coldStartP;
 
     public ProportionEstimator(List<Release> orderedReleases) {
-        this.mapper = new ReleaseIndexMapper(orderedReleases);
-        this.releaseMap = new HashMap<>();
+        this.mapper = new ReleaseIndexMapper(orderedReleases); // mappa le release a un indice intero ordinato
+        this.releaseMap = new HashMap<>(); // mappa nome --> oggetto Release
         for (Release r : orderedReleases) {
-            releaseMap.put(r.getName(), r);
+            releaseMap.put(r.getName(), r); // per stimare P se non ci sono ticket validi
         }
         this.coldStartP = ColdStartEstimator.computeColdStartP();
     }
 
+    /*
+    Viene chiamato su ogni ticket con almeno una AV per costruire il dataset di partenza da cui calcolare P
+     */
     public void registerValidTicket(TicketInfo ticket) {
 
+        // Salta ticket senza AV o FV
         if (ticket.getAffectedVersions().isEmpty()) {
             return;
         }
-
         if (ticket.getFixVersionName() == null) {
             return;
         }
 
+        // Trova la prima AV valida e normalizzata
         String avName = ticket.getAffectedVersions().stream()
                 .map(this::normalizeVersionName)
                 .filter(name -> mapper.getIndex(name) != -1)
@@ -47,24 +51,28 @@ public class ProportionEstimator {
             return;
         }
 
-        int fvIdx = mapper.getIndex(normalizeVersionName(ticket.getFixVersionName()));
-        int ivIdx = mapper.getIndex(avName);
+        // Ottiene gli indici di
+        int fvIdx = mapper.getIndex(normalizeVersionName(ticket.getFixVersionName())); // fix version
+        int ivIdx = mapper.getIndex(avName); // pone la prima AV come IV
         int ovIdx = findClosestReleaseBefore(ticket.getOpeningVersion());
 
         if (fvIdx == -1 || ivIdx == -1 || ovIdx == -1) {
             return;
         }
 
+        // Se uno dei tre è invalido (-1), ignora il ticket
         ticket.setInjectedVersion(ticket.getOpeningVersion());
         validTicketsWithAV.add(ticket);
     }
 
+    // Calcola P come media degli incrementi per ogni ticket con AV definita
     private double computeIncrementalP() {
         double sum = 0;
         int count = 0;
 
+        // Per ogni ticket con AV definita
         for (TicketInfo t : validTicketsWithAV) {
-            int iv = mapper.getIndex(t.getAffectedVersions().get(0));
+            int iv = mapper.getIndex(t.getAffectedVersions().get(0)); // Prende la prima AV come IV
             int fv = mapper.getIndex(t.getFixVersionName());
             int ov = findClosestReleaseBefore(t.getOpeningVersion());
 
@@ -76,19 +84,21 @@ public class ProportionEstimator {
             count++;
         }
 
-        return count == 0 ? 1.0 : sum / count;
+        return count == 0 ? 1.0 : sum / count; // ritorna 1 se non ci sono ticket validi
     }
 
+    // Usata per stimare la IV nei ticket che non hanno AV
     public String estimateIV(TicketInfo ticket) {
         if (Configuration.LABELING_DEBUG) Configuration.logger.info("Estimo IV per ticket " + ticket.getId());
         if (Configuration.LABELING_DEBUG) Configuration.logger.info("   → FV: " + ticket.getFixVersionName() + ", OV: " + ticket.getOpeningVersion());
 
         String normalizedFV = normalizeVersionName(ticket.getFixVersionName());
-        int fvIndex = mapper.getIndex(normalizedFV);
+        int fvIndex = mapper.getIndex(normalizedFV); //  indice della fixVersion
 
-        int ovIndex = findClosestReleaseBefore(ticket.getOpeningVersion());
+        int ovIndex = findClosestReleaseBefore(ticket.getOpeningVersion()); //  indice della release più vicina alla openingDate
         if (ovIndex == -1) return null;
 
+        // se hai almeno 5 ticket -->  computeIncrementalP() altrimenti cold start
         double p = (validTicketsWithAV.size() >= MIN_VALID_TICKETS) ? computeIncrementalP() : coldStartP;
 
         int ivIndex;
@@ -99,7 +109,7 @@ public class ProportionEstimator {
         }
 
         ivIndex = Math.max(0, ivIndex);
-        String estIV = mapper.getReleaseName(ivIndex);
+        String estIV = mapper.getReleaseName(ivIndex); // nome della versione stimata
 
         ticket.setInjectedVersionName(mapper.getReleaseName(ivIndex));
 

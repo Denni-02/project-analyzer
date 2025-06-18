@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Paths;
 
-
+// Classe per ricalcolare le metriche su un singolo metodo che è stato rifattorizzato
 public class SingleFileMetricAnalyzer {
 
     private static final String fileName = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
@@ -37,20 +37,23 @@ public class SingleFileMetricAnalyzer {
         ch.qos.logback.classic.Logger jgitLogger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.eclipse.jgit");
         jgitLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
 
-        // === Specifica il file Java da analizzare ===
+        // Specifica il file Java da analizzare
         File javaFile = new File(fileName);
         if (!javaFile.exists()) {
             return;
         }
 
         try {
+            // Il file Java viene parsato in una AST
             JavaParser parser = new JavaParser();
             CompilationUnit cu = parser.parse(javaFile).getResult().orElse(null);
             if (cu == null) return;
 
+            //  Estrazione metodi dal file
             List<MethodDeclaration> methods = cu.findAll(MethodDeclaration.class);
             if (methods.isEmpty()) return;
 
+            // Serve per calcolo delle metriche statiche
             StaticMetricCalculator staticCalc = new StaticMetricCalculator();
 
             // Configura PMD
@@ -66,11 +69,12 @@ public class SingleFileMetricAnalyzer {
                 Report report = pmd.performAnalysisAndCollectReport();
 
                 for (MethodDeclaration method : methods) {
+                    // Costruzione di ogni MethodInfo
                     MethodInfo info = new MethodInfo();
                     info.setMethodName(javaFile.getAbsolutePath() + "/" + method.getNameAsString());
                     info.setProjectName(Configuration.getProjectColumn());
                     info.setReleaseId("AFMethod");
-                    info.setReleaseDate(null); // opzionale
+                    info.setReleaseDate(null);
 
                     int start = method.getBegin().map(p -> p.line).orElse(-1);
                     int end = method.getEnd().map(p -> p.line).orElse(-1);

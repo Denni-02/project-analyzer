@@ -35,6 +35,7 @@ public final class GitRepository {
         return this.git;
     }
 
+    // Filtra e restituisce i commit tra due date
     public List<RevCommit> getCommitsBetweenDates(LocalDate from, LocalDate to) throws GitOperationException {
         try {
             Iterable<RevCommit> allCommits = this.getGit().log().call();
@@ -53,6 +54,7 @@ public final class GitRepository {
 
     }
 
+    // Verifica se l’autore del commit corrisponde a uno degli autori dei commit noti nel ticket
     public boolean isAuthorInTicket(RevCommit commit, TicketInfo ticket) {
         String author = commit.getAuthorIdent().getName();
         for (String commitId : ticket.getCommitIds()) {
@@ -64,12 +66,13 @@ public final class GitRepository {
                     return true;
                 }
             } catch (Exception e) {
-                // Ignora errori singoli
+                // Ignora errori
             }
         }
         return false;
     }
 
+    // Cerca commit contenenti una parola chiave nel messaggio
     public Iterable<RevCommit> getCommitsByMessageContaining(String keyword) throws GitOperationException {
         try {
             return git.log()
@@ -79,7 +82,6 @@ public final class GitRepository {
             throw new GitOperationException("Errore durante il recupero dei commit con messaggi contenenti '" + keyword + "'", e);
         }
     }
-
 
     // Trova l'ultimo commit prima della data di una release
     public RevCommit findLastCommitBefore(LocalDate releaseDate) throws IOException {
@@ -93,11 +95,11 @@ public final class GitRepository {
                 throw new IOException("Impossibile trovare origin/master");
             }
             walk.markStart(walk.parseCommit(master.getObjectId()));
-            walk.sort(RevSort.COMMIT_TIME_DESC); // Dal più recente al più vecchio
+            walk.sort(RevSort.COMMIT_TIME_DESC); // Ordina dal più recente al più vecchio
 
             for (RevCommit commit : walk) {
-                Date commitDate = commit.getAuthorIdent().getWhen();
-                if (commitDate.before(targetDate)) {
+                Date commitDate = commit.getAuthorIdent().getWhen(); // Estrae la data del commit
+                if (commitDate.before(targetDate)) { // Se è prima della data della release
                     return commit; // Trovato il commit valido
                 }
             }
@@ -117,6 +119,7 @@ public final class GitRepository {
         git.close();
     }
 
+    // Estrae tutti i commit che modificano un file prima di una certa release
     public Iterable<RevCommit> getCommitsTouchingFileBefore(String filePath, LocalDate releaseDate) throws GitOperationException {
         try {
             return git.log()
@@ -128,11 +131,12 @@ public final class GitRepository {
         }
     }
 
-
+    // Restituisce il commit padre del commit passato come input
     public RevCommit parseCommit(RevCommit commit) throws IOException {
         return repo.parseCommit(commit.getParent(0));
     }
 
+    // Analizza il diff tra un commit e il suo genitore, estraendo i file .java modificati
     public Set<String> getTouchedJavaFiles(RevCommit commit) throws GitOperationException, IOException {
         Set<String> javaFiles = new HashSet<>();
         if (commit.getParentCount() == 0) return javaFiles; // Salta root commit
@@ -157,7 +161,6 @@ public final class GitRepository {
 
         return javaFiles;
     }
-
 
 }
 
