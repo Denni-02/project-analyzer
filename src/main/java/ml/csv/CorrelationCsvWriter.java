@@ -33,7 +33,7 @@ public class CorrelationCsvWriter {
                 direction = "nessuna";
             }
 
-            fw.write(String.format("%s,%.4f,%.6f,%s%n", feature, spearman, pValue, direction));
+            fw.write(String.format("%s,%.4f,%.12f,%s%n", feature, spearman, pValue, direction));
             fw.close();
 
             if (Configuration.logger.isLoggable(Level.INFO)) {

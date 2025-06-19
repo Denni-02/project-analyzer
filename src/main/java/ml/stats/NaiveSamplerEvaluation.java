@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Random;
 import java.util.logging.Level;
+import static ml.evaluation.CrossValidator.evaluateAndWrap;
 
 /**
  * Valutazione del classificatore Naive su un sottoinsieme temporale (primi 20.000 metodi) del dataset OpenJPA,
@@ -74,7 +75,7 @@ public class NaiveSamplerEvaluation {
                 pw.println("Classifier,FS,SMOTE,Seed,Repeat,Fold,Accuracy,Precision,Recall,F1,AUC,Kappa,NPofB20");
             }
 
-            EvaluationResult result = CrossValidatorWithPreprocessing.evaluateAndWrap(
+            EvaluationResult result = evaluateAndWrap(
                     runName, naiveBayes, sample, 42, 10, 10, applyFeatureSelection, applySmote
             );
 

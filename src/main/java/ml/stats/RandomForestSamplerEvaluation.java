@@ -8,11 +8,11 @@ import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
-
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Random;
 import java.util.logging.Level;
+import static ml.evaluation.CrossValidator.evaluateAndWrap;
 
 /**
  * Valutazione del classificatore RandomForest su un sottoinsieme temporale del dataset OpenJPA,
@@ -83,7 +83,7 @@ public class RandomForestSamplerEvaluation {
                 pw.println("Classifier,FS,SMOTE,Seed,Repeat,Fold,Accuracy,Precision,Recall,F1,AUC,Kappa,NPofB20");
             }
 
-            EvaluationResult result = CrossValidatorWithPreprocessing.evaluateAndWrap(
+            EvaluationResult result = evaluateAndWrap(
                     runName, rf, sample, SEED, 10, 10, applyFeatureSelection, applySmote
             );
 

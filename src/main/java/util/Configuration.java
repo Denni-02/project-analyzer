@@ -16,6 +16,7 @@ public class Configuration {
     public static final String PROJECT1_PATH = ConfigurationLoader.get("project1.path");
     public static final String OUTPUT_CSV1_PATH = ConfigurationLoader.get("project1.output_csv");
     public static final String OUTPUT_ARFF1_PATH = ConfigurationLoader.get("project1.output_arff");
+    public static final String REDUCED_OUTPUT_ARFF1_PATH = ConfigurationLoader.get("project1.reduced_output_arff");
     public static final String PROJECT1_SUBSTRING = "bookkeeper/";
     public static final String PROJECT1_COLUMN = "Bookkeeper";
     public static final String DEBUG_SAMPLED_METHODS_PATH1 = ConfigurationLoader.get("debug.sampled_methods_path1");
@@ -25,6 +26,7 @@ public class Configuration {
     public static final String PROJECT2_PATH = ConfigurationLoader.get("project2.path");
     public static final String OUTPUT_CSV2_PATH = ConfigurationLoader.get("project2.output_csv");
     public static final String OUTPUT_ARFF2_PATH = ConfigurationLoader.get("project2.output_arff");
+    public static final String REDUCED_OUTPUT_ARFF2_PATH = ConfigurationLoader.get("project2.reduced_output_arff");
     public static final String PROJECT2_SUBSTRING = "openjpa/";
     public static final String PROJECT2_COLUMN = "Openjpa";
     public static final String DEBUG_SAMPLED_METHODS_PATH2 = ConfigurationLoader.get("debug.sampled_methods_path2");
@@ -57,6 +59,10 @@ public class Configuration {
 
     public static String getOutputArffPath() {
         return (SELECTED_PROJECT == ProjectType.BOOKKEEPER) ? OUTPUT_ARFF1_PATH : OUTPUT_ARFF2_PATH;
+    }
+
+    public static String getReducedOutputArffPath() {
+        return (SELECTED_PROJECT == ProjectType.BOOKKEEPER) ? REDUCED_OUTPUT_ARFF1_PATH : REDUCED_OUTPUT_ARFF2_PATH;
     }
 
     public static String getDebugSampledMethodsPath() {

@@ -7,24 +7,30 @@ import weka.core.converters.ConverterUtils.DataSource;
 import java.io.FileWriter;
 import java.util.logging.Level;
 
+/*
+ Classe che identifica l'AFMethod, ovvero il metodo:
+  - buggy (bugginess = Yes)
+  - appartenente all'ultima release
+  - con valore massimo della feature AFeature (es. NSmells o NestingDepth)
+ */
 public class AFMethodFinder {
 
     public static void main(String[] args) {
 
         try {
-            // === Carica dataset ===
+            // Carica dataset
             DataSource source = new DataSource(Configuration.getOutputArffPath());
             Instances data = source.getDataSet();
             if (data.classIndex() == -1) {
                 data.setClassIndex(data.numAttributes() - 1);
             }
 
-            // === Seleziona AFeature dinamicamente ===
+            // Seleziona AFeature dinamicamente
             String logicalAFeature = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
                     ? "NumberOfSmells"
                     : "NestingDepth";
 
-            // === Ricerca robusta della feature nel dataset ===
+            // Ricerca della feature nel dataset
             int aFeatureIndex = -1;
             for (int i = 0; i < data.numAttributes(); i++) {
                 String normalized = data.attribute(i).name().replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
@@ -41,7 +47,7 @@ public class AFMethodFinder {
             int classIndex = data.classIndex();
             int releaseIndex = data.attribute("ReleaseID").index();
 
-            // === Trova ultima release ===
+            // Trova ultima release
             String lastRelease = data.instance(0).stringValue(releaseIndex);
             for (int i = 1; i < data.numInstances(); i++) {
                 String rel = data.instance(i).stringValue(releaseIndex);
@@ -50,7 +56,7 @@ public class AFMethodFinder {
                 }
             }
 
-            // === Trova metodo buggy con max AFeature ===
+            // Trova metodo buggy con max AFeature
             double maxVal = Double.NEGATIVE_INFINITY;
             String methodPath = null;
             for (int i = 0; i < data.numInstances(); i++) {
@@ -64,7 +70,7 @@ public class AFMethodFinder {
                 }
             }
 
-            // === Salva su file ===
+            // Salva su file
             String path = "ml_results/" + Configuration.getProjectName().toLowerCase() + "_afmethod_debug.txt";
             FileWriter writer = new FileWriter(path);
             writer.write("Project: " + Configuration.getProjectName() + "\n");
