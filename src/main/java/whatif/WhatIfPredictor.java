@@ -5,70 +5,85 @@ import util.Configuration;
 import util.ProjectType;
 import weka.classifiers.Classifier;
 import weka.classifiers.trees.RandomForest;
+import weka.core.Attribute;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
 import weka.filters.supervised.instance.Resample;
-
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+
+import weka.attributeSelection.InfoGainAttributeEval;
+import weka.attributeSelection.Ranker;
+import weka.classifiers.lazy.IBk;
+import weka.filters.supervised.attribute.AttributeSelection;
+import weka.filters.supervised.instance.SMOTE;
+import weka.filters.unsupervised.attribute.Remove;
 
 public class WhatIfPredictor {
 
-    public static List<PredictionSummary> runPrediction(String datasetAPath, String bPlusPath, String bPath, String cPath, String outputCsvPath, String projectName) throws Exception {
-        // === 1. Carica i dataset ===
+    // Metodo principale per eseguire la predizione What-If
+    public static List<PredictionSummary> runPrediction(
+            String datasetAPath,
+            String bPlusPath,
+            String bPath,
+            String cPath,
+            String outputCsvPath,
+            String projectName
+    ) throws Exception {
+
+        // Carica i dataset
         Instances datasetA = loadDataset(datasetAPath);
         Instances datasetBplus = loadDataset(bPlusPath);
         Instances datasetB = loadDataset(bPath);
         Instances datasetC = loadDataset(cPath);
 
-        // === 2. Applica Resample ===
-        Resample resample = new Resample();
-        resample.setBiasToUniformClass(1.0); // bilanciamento
-        resample.setNoReplacement(false);
+        // Rimuovi releaseID e Applica Feature Selection a tutti
+        datasetA = preprocess(datasetA, true, true);
+        datasetA = reorderBugginessValues(datasetA);
+        List<String> selectedAttributes = new ArrayList<>();
+        for (int i = 0; i < datasetA.numAttributes() - 1; i++) {
+            selectedAttributes.add(datasetA.attribute(i).name());
+        }
+        String classAttr = datasetA.classAttribute().name();
+        datasetBplus = preprocess(datasetBplus, true, false);
+        datasetBplus = reorderBugginessValues(datasetBplus);
+        datasetB = preprocess(datasetB, true, false);
+        datasetB = reorderBugginessValues(datasetB);
+        datasetC = preprocess(datasetC, true, false);
+        datasetC = reorderBugginessValues(datasetC);
 
-        if (Configuration.SELECTED_PROJECT == ProjectType.OPENJPA) {
-            resample.setSampleSizePercent(30.0); // usa solo il 30% dei dati per addestramento
-            Configuration.logger.info("OPENJPA: campionamento del 30% del dataset bilanciato.");
-        } else {
-            resample.setSampleSizePercent(100.0);
-            Configuration.logger.info("BOOKKEEPER: uso del 100% del dataset bilanciato.");
+        // Se BookKeeper, allinea le feature ai selectedAttributes
+        if (Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER) {
+            datasetBplus = alignFeatures(datasetBplus, selectedAttributes, classAttr);
+            datasetB = alignFeatures(datasetB, selectedAttributes, classAttr);
+            datasetC = alignFeatures(datasetC, selectedAttributes, classAttr);
         }
 
-        resample.setInputFormat(datasetA);
-        Instances balancedData = Filter.useFilter(datasetA, resample);
+        Instances datasetNewA = datasetA;
 
-        // === 3. Configura RandomForest ===
-        RandomForest rf = new RandomForest();
-
+        // Opzionale: Sampling (solo per OpenJPA)
         if (Configuration.SELECTED_PROJECT == ProjectType.OPENJPA) {
-            // Parametri via options (incluso minNum con -M)
-            String[] options = Utils.splitOptions(
-                    "-I 40 -depth 15 -K 0 -S 1 -num-slots 1 -M 50"
-            );
-            rf.setOptions(options);
-            rf.setBagSizePercent(50); // imposta separatamente
-
-            Configuration.logger.info("RandomForest OPENJPA: 40 alberi, maxDepth 15, minNum 50, bagSize 50%, 1 thread.");
-        } else {
-            rf.setNumIterations(100);
-            rf.setNumExecutionSlots(Runtime.getRuntime().availableProcessors());
-            Configuration.logger.info("RandomForest BOOKKEEPER: 100 alberi, multithread.");
+            datasetNewA = downsample(datasetA, 20000); // massimo 20.000 istanze
+            Configuration.logger.info("OPENJPA: campionamento hard limit a 20.000 istanze.");
         }
 
-        // === 4. Addestra ===
-        Classifier classifier = rf;
-        classifier.buildClassifier(balancedData);
+        // Opzionale: SMOTE (solo per BookKeeper)
+        if (Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER) {
+            datasetNewA = applySMOTE(datasetA);
+        }
 
-        // === 5. Predizioni ===
-        PredictionSummary summaryA = predict("A", datasetA, classifier);
-        PredictionSummary summaryBplus = predict("B+", datasetBplus, classifier);
-        PredictionSummary summaryB = predict("B", datasetB, classifier);
-        PredictionSummary summaryC = predict("C", datasetC, classifier);
+        // Costruisci classificatore
+        Classifier model = buildClassifier(datasetNewA);
+
+        // Predizioni
+        PredictionSummary summaryA = predict("A", datasetA, model);
+        PredictionSummary summaryBplus = predict("B+", datasetBplus, model);
+        PredictionSummary summaryB = predict("B", datasetB, model);
+        PredictionSummary summaryC = predict("C", datasetC, model);
 
         List<PredictionSummary> results = Arrays.asList(summaryA, summaryBplus, summaryB, summaryC);
         exportSummaryToCsv(results, outputCsvPath);
@@ -76,19 +91,117 @@ public class WhatIfPredictor {
         return results;
     }
 
+    // Carica un dataset Weka da file .arff
     private static Instances loadDataset(String path) throws Exception {
         Instances data = new DataSource(path).getDataSet();
         if (data.classIndex() == -1) {
-            data.setClassIndex(data.numAttributes() - 1); // ultima colonna = Bugginess
+            data.setClassIndex(data.numAttributes() - 1);
         }
+
         return data;
     }
 
+    // Allinea le feature dei dataset di test con quelle del training
+    private static Instances alignFeatures(Instances data, List<String> selectedNames, String classAttr) throws Exception {
+        List<Integer> indicesToKeep = new ArrayList<>();
+        for (int i = 0; i < data.numAttributes(); i++) {
+            String attrName = data.attribute(i).name();
+            if (selectedNames.contains(attrName) || attrName.equals(classAttr)) {
+                indicesToKeep.add(i);
+            }
+        }
+
+        int[] indices = indicesToKeep.stream().mapToInt(i -> i).toArray();
+
+        Remove remove = new Remove();
+        remove.setInvertSelection(true);
+        remove.setAttributeIndicesArray(indices);
+        remove.setInputFormat(data);
+        Instances filtered = Filter.useFilter(data, remove);
+
+        // Assicura che bugginess sia la classe, anche se è stata spostata
+        for (int i = 0; i < filtered.numAttributes(); i++) {
+            System.out.println("  " + i + ": " + filtered.attribute(i).name());
+            if (filtered.attribute(i).name().equalsIgnoreCase(classAttr)) {
+                filtered.setClassIndex(i);
+                break;
+            }
+        }
+        System.out.println("→ Class index: " + filtered.classIndex() + " (" + filtered.classAttribute().name() + ")");
+
+        return filtered;
+    }
+
+
+    // Applica la selezione delle feature e rimuove releaseID se richiesto
+    private static Instances preprocess(Instances data, boolean removeReleaseID, boolean applyFS) throws Exception {
+        if (removeReleaseID && data.attribute("releaseID") != null) {
+            Remove remove = new Remove();
+            remove.setAttributeIndices("" + (data.attribute("releaseID").index() + 1)); // 1-based
+            remove.setInputFormat(data);
+            data = Filter.useFilter(data, remove);
+        }
+
+        if (applyFS) {
+            AttributeSelection fs = new AttributeSelection();
+            InfoGainAttributeEval eval = new InfoGainAttributeEval();
+            Ranker search = new Ranker();
+            search.setThreshold(0.01);
+
+            fs.setEvaluator(eval);
+            fs.setSearch(search);
+            fs.setInputFormat(data);
+            data = Filter.useFilter(data, fs);
+        }
+
+        return data;
+    }
+
+    // Applica SMOTE per riequilibrare le classi
+    private static Instances applySMOTE(Instances data) throws Exception {
+        SMOTE smote = new SMOTE();
+        smote.setInputFormat(data);
+        smote.setPercentage(50.0);
+        return Filter.useFilter(data, smote);
+    }
+
+    // Campionamento semplice delle istanze (per limitare dimensioni)
+    private static Instances downsample(Instances data, int maxInstances) {
+        if (data.size() <= maxInstances) return data;
+
+        // Shuffle con seed fisso per riproducibilità
+        data.randomize(new java.util.Random(42));
+
+        // Estrae casualmente le prime N istanze
+        return new Instances(data, 0, maxInstances);
+    }
+
+
+    // Costruisce il classificatore (RandomForest o IBk) in base al progetto.
+    private static Classifier buildClassifier(Instances trainData) throws Exception {
+        if (Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER) {
+            IBk ibk = new IBk();
+            ibk.setKNN(3);
+            ibk.buildClassifier(trainData);
+            return ibk;
+        } else {
+            RandomForest rf = new RandomForest();
+            String[] options = Utils.splitOptions("-I 30 -depth 12 -K 0 -S 1 -num-slots 1 -M 50");
+            rf.setOptions(options);
+            rf.setBagSizePercent(50);
+            rf.buildClassifier(trainData);
+            return rf;
+        }
+    }
+
+    // Applica una predizione su un dataset e conta i veri/predetti buggy
     private static PredictionSummary predict(String name, Instances data, Classifier model) throws Exception {
         int actualBuggy = 0;
         int predictedBuggy = 0;
 
+        Set<Double> uniqueClassValues = new HashSet<>();
         for (Instance instance : data) {
+            uniqueClassValues.add(instance.classValue());
             double actual = instance.classValue();
             double predicted = model.classifyInstance(instance);
 
@@ -100,6 +213,7 @@ public class WhatIfPredictor {
         return new PredictionSummary(name, actualBuggy, predictedBuggy);
     }
 
+    // Esporta la tabella dei risultati nel formato richiesto (A,E)
     private static void exportSummaryToCsv(List<PredictionSummary> summaries, String path) {
         try (FileWriter writer = new FileWriter(path)) {
             writer.write("Dataset,A,E\n");
@@ -112,4 +226,53 @@ public class WhatIfPredictor {
             Configuration.logger.severe("Errore durante salvataggio CSV: " + e.getMessage());
         }
     }
+
+    // Riordina i valori della classe Bugginess in modo che siano sempre {no, yes}
+    private static Instances reorderBugginessValues(Instances data) throws Exception {
+        Attribute classAttr = data.classAttribute();
+
+        // Verifica che sia nominale
+        if (!classAttr.isNominal()) {
+            throw new IllegalArgumentException("Bugginess deve essere nominale");
+        }
+
+        // Se l'ordine è già corretto {no, yes}, non fare nulla
+        if (classAttr.value(0).equalsIgnoreCase("no") && classAttr.value(1).equalsIgnoreCase("yes")) {
+            return data;
+        }
+
+        // Rinomina il vecchio attributo per evitare conflitto
+        data.renameAttribute(classAttr, "Old_Bugginess");
+
+        // Crea nuovo attributo con ordine corretto
+        ArrayList<String> newValues = new ArrayList<>();
+        newValues.add("no");  // clean = 0.0
+        newValues.add("yes"); // buggy = 1.0
+        Attribute newClassAttr = new Attribute("Bugginess", newValues);
+
+        // Inserisci in fondo
+        data.insertAttributeAt(newClassAttr, data.numAttributes());
+        int newClassIndex = data.numAttributes() - 1;
+
+        // Copia i valori corretti
+        for (int i = 0; i < data.numInstances(); i++) {
+            Instance inst = data.instance(i);
+            String original = inst.stringValue(data.attribute("Old_Bugginess")).toLowerCase();
+            inst.setValue(newClassIndex, original.equals("yes") ? "yes" : "no");
+        }
+
+        // Rimuovi vecchio attributo
+        Remove remove = new Remove();
+        remove.setAttributeIndicesArray(new int[]{data.attribute("Old_Bugginess").index()});
+        remove.setInputFormat(data);
+        data = Filter.useFilter(data, remove);
+
+        // Imposta la nuova classe
+        data.setClassIndex(data.numAttributes() - 1);
+        return data;
+    }
+
+
 }
+
+

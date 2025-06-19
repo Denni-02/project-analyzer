@@ -13,6 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.function.DoublePredicate;
 
+/**
+ Classe per la costruzione dei sotto-dataset necessari all’analisi What-If.
+ Usa sempre la feature "Number of Smells" per costruire i dataset B⁺, B e C.
+ */
 public class WhatIfDatasetBuilder {
 
     private final String outputDir;
@@ -22,23 +26,29 @@ public class WhatIfDatasetBuilder {
     }
 
 
-    private static final String RAW_FEATURE_NAME = Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER
+    /*private static final String RAW_FEATURE_NAME = Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER
             ? "Number of Smells"
             : "NestingDepth";
+
+     */
+    private static final String RAW_FEATURE_NAME = "Number of Smells";
 
     //private static final String OUTPUT_DIR = "whatif/";
     private static final String PROJECT_PREFIX = Configuration.getProjectName().toLowerCase(); // bookkeeper / openjpa
 
+    // Costruisce il dataset B+ (metodi con smells)
     public Instances buildBPlus(Instances datasetA) {
         Configuration.logger.info("Costruzione dataset B⁺: " + RAW_FEATURE_NAME + " > 0");
         return filterAndLog(datasetA, RAW_FEATURE_NAME, v -> v > 0, PROJECT_PREFIX + "_Bplus.csv");
     }
 
+    // ostruisce il dataset C (metodi clean, senza smells)
     public Instances buildC(Instances datasetA) {
         Configuration.logger.info("Costruzione dataset C: " + RAW_FEATURE_NAME + " == 0");
         return filterAndLog(datasetA, RAW_FEATURE_NAME, v -> v == 0, PROJECT_PREFIX + "_C.csv");
     }
 
+    // Costruisce il dataset B (what-if): copia di B⁺ con NumberOfSmells forzato a 0
     public Instances buildB(Instances datasetBPlus) {
         Configuration.logger.info("Costruzione dataset B (what-if): B⁺ con " + RAW_FEATURE_NAME + " = 0");
 
@@ -54,6 +64,7 @@ public class WhatIfDatasetBuilder {
         return cloned;
     }
 
+    // Filtra le istanze in base a una predicate sulla feature e le esporta
     private Instances filterAndLog(Instances data, String featureName, DoublePredicate predicate, String exportFile) {
         int featureIndex = getCleanAttributeIndex(data, featureName);
 
@@ -69,6 +80,7 @@ public class WhatIfDatasetBuilder {
         return filtered;
     }
 
+    // Esporta un dataset in formato CSV, ripulendo i nomi delle feature
     private void exportToCsv(Instances data, String fileName) {
         try {
             Files.createDirectories(Paths.get(outputDir));
@@ -94,6 +106,7 @@ public class WhatIfDatasetBuilder {
         }
     }
 
+    // Trova l’indice della feature normalizzando i caratteri speciali
     private int getCleanAttributeIndex(Instances data, String cleanName) {
         for (int i = 0; i < data.numAttributes(); i++) {
             String raw = data.attribute(i).name();
