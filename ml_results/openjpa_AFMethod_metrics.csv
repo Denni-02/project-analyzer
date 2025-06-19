@@ -1,0 +1,2 @@
+Method;LOC;Cyclomatic;Cognitive;ParameterCount;NestingDepth;StatementCount;ReturnTypeComplexity;LocalVarCount;Smells;SmellTypes
+/home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java/setHint;37;15;21;2;8;6;1;8;4;"CognitiveComplexity;CyclomaticComplexity;AvoidReassigningParameters;ForLoopCanBeForeach"

@@ -1,0 +1,12 @@
+CommitID;Author;Date;Message%nf37d9f8d615cae73b620186f930a49dd0e402be2;Marc Prud'hommeaux;2006-08-25T23:35:13;Fixed to use equals() instead of == for testing the type of the current Locale.
+16f78782dd4bd189a15d1d1d13b7045872411a91;Patrick Linskey;2006-11-28T09:27:14;fixed bug that caused cached JPQL queries to not properly cache the candidate class.
+a99763cf63446fac33964fbf7ce6244de54e1deb;Patrick Linskey;2007-04-26T20:28:18;Updated recently-added files to meet Apache's latest header syntax.
+953df22c39958570aecb6e2ccda1533d46f173a6;Kevin W. Sutter;2007-08-27T22:51:49;OPENJPA-338.  Committing Teresa's patch for correcting CASTing with DB2.
+2895819d406139b89d90f3a6ab650180560e03bd;Patrick Linskey;2007-11-08T01:09:55;OPENJPA-417. Removed obsolete test support class.
+c457053f9459293915fb41d1cdea09e014a0175d;Pinaki Poddar;2008-02-16T23:03:25;OPENJPA-515 Remove XA transaction across slices + test configuration for Derby + activate tests
+11f4d0d7ad451519c662521d289c3853eb2cd61b;Albert Lee;2008-05-21T16:41:02;OPENJPA-604 - Use English only locale for TRACE, INFO, WARN, ERROR and FATAL keywords in Log specification.
+8cfa25c524d914ce02eef0df7435c8199931ff32;Catalina Wei;2008-07-22T19:41:30;OPENJPA-241 Extra SQL on lazy CMR load commit openjpa_241.patch on behalf of Fay Wang
+ffb59c35fcd7b8d6adf658bc794bcaff465ced32;Pinaki Poddar;2008-08-11T19:18:31;OPENJPA-692: Detect orphaning relation and change row update to delete for join table entry.
+ff8d46578c84df4b581976a24d51970275845497;Michael Dick;2009-03-17T22:04:37;OPENJPA-970. Committing patch provided by Donald Woods
+7f66117b5aa372d6ec7179b2a1edd47ed46efbe3;Fay Wang;2010-01-17T23:47:47;OPENJPA-782: element collection field in orm.xml should not be serialized
+f35802f702a37f5d610c968ac3e1270ec669b741;Donald Woods;2010-04-21T22:55:50;OPENJPA-1639 revert for now

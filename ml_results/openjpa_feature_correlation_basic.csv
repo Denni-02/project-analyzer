@@ -1,0 +1,15 @@
+Feature;Spearman;P-Value;Correlazione
+LOC;0.1245;0.000000;positiva
+CyclomaticComplexity;0.1635;0.000000;positiva
+CognitiveComplexity;0.1624;0.000000;positiva
+Number of Smells;0.1263;0.000000;positiva
+ParameterCount;0.0102;0.000003;positiva
+NestingDepth;0.1696;0.000000;positiva
+StatementCount;0.1785;0.000000;positiva
+LocalVariableCount;0.1726;0.000000;positiva
+ReturnTypeComplexity;0.0065;0.002876;positiva
+MethodHistories;0.5040;0.000000;positiva
+StmtAdded;0.4345;0.000000;positiva
+StmtDeleted;0.3779;0.000000;positiva
+Churn;0.4278;0.000000;positiva
+DistinctAuthors;0.5040;0.000000;positiva

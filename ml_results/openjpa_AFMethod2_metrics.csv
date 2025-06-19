@@ -1,0 +1,2 @@
+Method;LOC;Cyclomatic;Cognitive;ParameterCount;NestingDepth;StatementCount;ReturnTypeComplexity;LocalVarCount;Smells;SmellTypes
+/home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java/setHint;11;4;3;2;1;6;1;2;0;

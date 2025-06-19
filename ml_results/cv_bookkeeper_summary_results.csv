@@ -1,0 +1,13 @@
+Classifier;FeatureSelection;SMOTE;Precision;Recall;AUC;Kappa;NPofB20
+NaiveBayes;false;false;0.6638;0.6712;0.7648;0.2150;0.3559
+RandomForest;false;false;0.6177;0.6228;0.7039;0.1854;0.5116
+IBk;false;false;0.6437;0.6517;0.7235;0.2384;0.4736
+NaiveBayes;true;false;0.6695;0.6758;0.7699;0.2289;0.3559
+RandomForest;true;false;0.6183;0.6234;0.7033;0.1867;0.5116
+IBk;true;false;0.6475;0.6554;0.7283;0.2462;0.4736
+NaiveBayes;true;true;0.7577;0.6353;0.79405;0.2381;0.3559
+RandomForest;true;true;0.7312;0.6986;0.7919;0.2194;0.5116
+IBk;true;true;0.7525;0.6991;0.8136;0.2569;0.4736
+NaiveBayes;false;true;0.7554;0.6284;0.79045;0.2308;0.3559
+RandomForest;false;true;0.7292;0.6962;0.7905;0.2152;0.5116
+IBk;false;true;0.7496;0.6944;0.81575;0.2512;0.4736

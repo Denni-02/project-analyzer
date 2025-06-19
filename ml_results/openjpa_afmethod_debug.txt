@@ -1,0 +1,5 @@
+Project: OPENJPA
+AFeature: NestingDepth
+Last Release: 2.0.0
+Buggy Method: /home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java/setHint
+Value of AFeature: 8.0
