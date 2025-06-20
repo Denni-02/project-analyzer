@@ -28,27 +28,7 @@ public class SpearmanCalculator {
 
             Instances data;
 
-            // Caricamento del dataset
-            if (!REDUCTION) {
-                // Dataset completo
-                DataSource source = new DataSource(Configuration.getOutputArffPath());
-                data = source.getDataSet();
-            } else {
-                // Dataset ridotto
-                DataSource source = new DataSource(Configuration.getReducedOutputArffPath());
-                Instances original = source.getDataSet();
-
-                // Rimuovi releaseID se presente
-                int releaseIdIndex = original.attribute("releaseID") != null ? original.attribute("releaseID").index() : -1;
-                if (releaseIdIndex != -1) {
-                    Remove remove = new Remove();
-                    remove.setAttributeIndicesArray(new int[]{releaseIdIndex});
-                    remove.setInputFormat(original);
-                    data = Filter.useFilter(original, remove);
-                } else {
-                    data = original;
-                }
-            }
+            data = getInstances();
 
             // Imposta la colonna di classe come target
             if (data.classIndex() == -1) {
@@ -84,5 +64,31 @@ public class SpearmanCalculator {
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore nel calcolo della correlazione Spearman", e);
         }
+    }
+
+    private static Instances getInstances() throws Exception {
+        Instances data;
+        // Caricamento del dataset
+        if (!REDUCTION) {
+            // Dataset completo
+            DataSource source = new DataSource(Configuration.getOutputArffPath());
+            data = source.getDataSet();
+        } else {
+            // Dataset ridotto
+            DataSource source = new DataSource(Configuration.getReducedOutputArffPath());
+            Instances original = source.getDataSet();
+
+            // Rimuovi releaseID se presente
+            int releaseIdIndex = original.attribute("releaseID") != null ? original.attribute("releaseID").index() : -1;
+            if (releaseIdIndex != -1) {
+                Remove remove = new Remove();
+                remove.setAttributeIndicesArray(new int[]{releaseIdIndex});
+                remove.setInputFormat(original);
+                data = Filter.useFilter(original, remove);
+            } else {
+                data = original;
+            }
+        }
+        return data;
     }
 }
