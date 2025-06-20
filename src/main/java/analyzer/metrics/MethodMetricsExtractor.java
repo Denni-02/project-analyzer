@@ -85,7 +85,7 @@ public class MethodMetricsExtractor {
 
 
         } catch (IOException e) {
-            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+            Configuration.logger.info("Aanalisi progrtto fallita");
         }
     }
 
@@ -154,7 +154,7 @@ public class MethodMetricsExtractor {
             }
 
         } catch (Exception e) {
-            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+            Configuration.logger.info("Errore analisi file");
         }
     }
 
@@ -189,7 +189,7 @@ public class MethodMetricsExtractor {
             return info;
 
         } catch (Exception e) {
-            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+            Configuration.logger.info("Metodo non analizzato");
 
             return null;
         }
@@ -225,7 +225,7 @@ public class MethodMetricsExtractor {
             fw.write("\n\n");
 
         } catch (IOException e) {
-            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+            Configuration.logger.info("No debug");
 
         }
     }
