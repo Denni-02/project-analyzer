@@ -26,7 +26,6 @@ public class CsvDebugWriter {
             }
         } catch (IOException e) {
             Configuration.logger.info("Errore nella scrittura del CSV dei commit");
-            e.printStackTrace();
         }
     }
 
@@ -44,7 +43,6 @@ public class CsvDebugWriter {
             }
         } catch (IOException e) {
             Configuration.logger.info("Errore nella scrittura del CSV delle release");
-            e.printStackTrace();
         }
     }
 }

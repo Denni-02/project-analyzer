@@ -31,7 +31,6 @@ public class CsvTicketCommitWriter {
 
         } catch (IOException e) {
             Configuration.logger.info("Errore nella scrittura del CSV dei commit per ticket");
-            e.printStackTrace();
         }
     }
 }

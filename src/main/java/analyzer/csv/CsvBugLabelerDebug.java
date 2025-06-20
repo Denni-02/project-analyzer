@@ -21,7 +21,6 @@ public class CsvBugLabelerDebug {
             }
         } catch (IOException e) {
             Configuration.logger.log(Level.SEVERE, "Errore scrivendo il debug CSV dei metodi buggy.", e);
-            e.printStackTrace();
         }
     }
 }

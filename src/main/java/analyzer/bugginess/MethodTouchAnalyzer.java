@@ -63,7 +63,6 @@ public class MethodTouchAnalyzer {
             }
         } catch (Exception e) {
             Configuration.logger.severe(String.format("Errore in getTouchedMethods() per commit %s", commit.getName()));
-            e.printStackTrace();
         }
 
         return touched;

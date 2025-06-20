@@ -137,7 +137,6 @@ public class DatasetApp {
             if (Configuration.BASIC_DEBUG) Configuration.logger.info("Analisi completata. File salvato in: " + Configuration.getOutputCsvPath());
 
         } catch (Exception e) {
-            e.printStackTrace();
             Configuration.logger.info("Errore durante l'esecuzione.");
         }
     }

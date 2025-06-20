@@ -32,7 +32,6 @@ public class CsvTicketDebugWriter {
 
         } catch (IOException e) {
             Configuration.logger.info("Errore nella scrittura del file CSV dei ticket.");
-            e.printStackTrace();
         }
     }
 }

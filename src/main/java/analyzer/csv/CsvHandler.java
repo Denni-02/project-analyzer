@@ -1,6 +1,8 @@
 package analyzer.csv;
 
 import analyzer.model.MethodInfo;
+import util.Configuration;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -43,7 +45,7 @@ public class CsvHandler {
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
         }
     }
 

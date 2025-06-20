@@ -85,7 +85,7 @@ public class MethodMetricsExtractor {
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
         }
     }
 
@@ -154,7 +154,7 @@ public class MethodMetricsExtractor {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
         }
     }
 
@@ -189,7 +189,8 @@ public class MethodMetricsExtractor {
             return info;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+
             return null;
         }
     }
@@ -224,7 +225,8 @@ public class MethodMetricsExtractor {
             fw.write("\n\n");
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Configuration.logger.info("Errore nella scrittura del CSV delle release");
+
         }
     }
 
