@@ -54,7 +54,7 @@ public class CrossValidator {
         double totalKappa = 0;
         int totalFolds = folds * repeats;
 
-        Random rand = new Random(SEED);
+        Random rand = new Random(SEED); // NOSONAR: uso intenzionale e sicuro per riproducibilità esperimenti ML
 
         // 10x10-fold Cross Validation
         for (int i = 0; i < repeats; i++) {
