@@ -33,10 +33,11 @@ public class TicketParser {
             int maxResults = 1000;
             int total = 1;
 
-            /* Query JIRA --> scarica solo ticket con:
-            - type = Bug
-            - status ∈ {Resolved, Closed}
-            - resolution = Fixed
+            /**
+             *  Query JIRA --> scarica solo ticket con:
+             * type = Bug
+             * status ∈ {Resolved, Closed}
+             * resolution = Fixed
             */
             while (startAt < total) {
 
