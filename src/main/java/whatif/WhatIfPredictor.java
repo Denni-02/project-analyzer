@@ -172,7 +172,7 @@ public class WhatIfPredictor {
         if (data.size() <= maxInstances) return data;
 
         // Shuffle con seed fisso per riproducibilità
-        data.randomize(new java.util.Random(42));
+        data.randomize(new java.util.Random(42));  // NOSONAR: uso intenzionale e sicuro per riproducibilità esperimenti ML
 
         // Estrae casualmente le prime N istanze
         return new Instances(data, 0, maxInstances);

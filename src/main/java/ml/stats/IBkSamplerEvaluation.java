@@ -58,7 +58,7 @@ public class IBkSamplerEvaluation {
                     }
                 }
 
-                Random rand = new Random(42);
+                Random rand = new Random(42);  // NOSONAR: uso intenzionale e sicuro per riproducibilità esperimenti ML
                 negatives.randomize(rand);
 
                 int limit = Math.min(positives.numInstances(), negatives.numInstances());
