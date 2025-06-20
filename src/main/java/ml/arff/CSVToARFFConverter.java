@@ -23,7 +23,7 @@ public class CSVToARFFConverter {
         loader.setSource(new File(csvPath));
         Instances data = loader.getDataSet();  // carica le istanze dal CSV
 
-        // Riordina le etichette: {Yes, No} --> {No, Yes}
+        // Riordina le etichette
         int classIndex = data.numAttributes() - 1; // ultima colonna bugginess
         Attribute originalAttr = data.attribute(classIndex);
 

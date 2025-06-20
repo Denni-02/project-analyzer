@@ -27,7 +27,6 @@ public class WhatIfDatasetBuilder {
 
     private static final String RAW_FEATURE_NAME = "Number of Smells";
 
-    //private static final String OUTPUT_DIR = "whatif/";
     private static final String PROJECT_PREFIX = Configuration.getProjectName().toLowerCase(); // bookkeeper / openjpa
 
     // Costruisce il dataset B+ (metodi con smells)

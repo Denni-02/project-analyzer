@@ -85,7 +85,7 @@ public class CrossValidator {
             }
 
             // Applica SMOTE una volta per ripetizione
-            if (applySmote && Configuration.getProjectName() == "BOOKKEEPER") {
+            if (applySmote && Configuration.getProjectName().equals("BOOKKEEPER")) {
                 double percentage = 65;
 
                 SMOTE smote = new SMOTE();

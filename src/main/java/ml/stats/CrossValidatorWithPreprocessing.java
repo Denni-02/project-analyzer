@@ -38,7 +38,6 @@ public class CrossValidatorWithPreprocessing {
                 String runName = String.format("%s_FS=%s_SMOTE=%s", classifierName, applyFS, applySMOTE);
 
                 EvaluationResult result = evaluateAndWrap(runName, cls, data, 10, 10, applyFS, applySMOTE);
-                Configuration.logger.info(String.format("Valutazione completata: %s", result));
                 EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
             }
 

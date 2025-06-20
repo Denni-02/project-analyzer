@@ -24,13 +24,6 @@ public class EvaluationFoldResult {
         this.seed = seed;
         this.repeat = repeat;
         this.fold = fold;
-        /*this.accuracy = accuracy;
-        this.precision = precision;
-        this.recall = recall;
-        this.f1 = f1;
-        this.auc = auc;
-        this.kappa = kappa;
-        this.npofb20 = npofb20;*/
     }
 
     public String getClassifierName() {
