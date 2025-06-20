@@ -1,38 +1,117 @@
 package ml.model;
 
 public class EvaluationFoldResult {
-    public String classifierName;
-    public boolean applyFS;
-    public boolean applySMOTE;
-    public int seed;
-    public int repeat;
-    public int fold;
-    public double accuracy;
-    public double precision;
-    public double recall;
-    public double f1;
-    public double auc;
-    public double kappa;
-    public double npofb20;
+    private String classifierName;
+    private boolean applyFS;
+    private boolean applySMOTE;
+    private int seed;
+    private int repeat;
+    private int fold;
+    private double accuracy;
+    private double precision;
+    private double recall;
+    private double f1;
+    private double auc;
+    private double kappa;
+    private double npofb20;
 
 
     public EvaluationFoldResult(String classifierName, boolean applyFS, boolean applySMOTE,
-                                int seed, int repeat, int fold,
-                                double accuracy, double precision, double recall,
-                                double f1, double auc, double kappa, double npofb20) {
+                                int seed, int repeat, int fold) {
         this.classifierName = classifierName;
         this.applyFS = applyFS;
         this.applySMOTE = applySMOTE;
         this.seed = seed;
         this.repeat = repeat;
         this.fold = fold;
-        this.accuracy = accuracy;
+        /*this.accuracy = accuracy;
         this.precision = precision;
         this.recall = recall;
         this.f1 = f1;
         this.auc = auc;
         this.kappa = kappa;
-        this.npofb20 = npofb20;
+        this.npofb20 = npofb20;*/
     }
 
+    public String getClassifierName() {
+        return classifierName;
+    }
+
+    public boolean isApplyFS() {
+        return applyFS;
+    }
+
+    public boolean isApplySMOTE() {
+        return applySMOTE;
+    }
+
+    public int getSeed() {
+        return seed;
+    }
+
+    public int getRepeat() {
+        return repeat;
+    }
+
+    public int getFold() {
+        return fold;
+    }
+
+    public double getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(double accuracy) {
+        this.accuracy = accuracy;
+    }
+
+    public double getPrecision() {
+        return precision;
+    }
+
+    public void setPrecision(double precision) {
+        this.precision = precision;
+    }
+
+    public double getRecall() {
+        return recall;
+    }
+
+    public void setRecall(double recall) {
+        this.recall = recall;
+    }
+
+    public double getF1() {
+        return f1;
+    }
+
+    public void setF1(double f1) {
+        this.f1 = f1;
+    }
+
+    public double getAuc() {
+        return auc;
+    }
+
+    public void setAuc(double auc) {
+        this.auc = auc;
+    }
+
+    public double getKappa() {
+        return kappa;
+    }
+
+    public void setKappa(double kappa) {
+        this.kappa = kappa;
+    }
+
+    public double getNpofb20() {
+        return npofb20;
+    }
+
+    public void setNpofb20(double npofb20) {
+        this.npofb20 = npofb20;
+    }
 }
+
+

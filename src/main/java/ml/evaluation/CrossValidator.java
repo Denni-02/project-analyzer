@@ -14,7 +14,6 @@ import weka.filters.Filter;
 import weka.filters.supervised.instance.SMOTE;
 import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.attribute.RemoveUseless;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -25,18 +24,18 @@ public class CrossValidator {
         // Prevent instantiation
     }
 
+    private static final int SEED = 42;
+
     /**
      * Metodo per eseguire la cross validation di un classificatore con possibili step di preprocessing:
      * - Feature Selection (InfoGain + Ranker)
      * - SMOTE per il bilanciamento della classe minoritaria
      */
     public static EvaluationResult evaluateAndWrap(String name, Classifier cls, Instances data,
-                                                   int seed, int folds, int repeats,
+                                                   int folds, int repeats,
                                                    boolean applyFeatureSelection,
                                                    boolean applySmote) throws Exception {
 
-        long startTime = System.currentTimeMillis();
-        Configuration.logger.info("Inizio valutazione: " + name);
 
         // Rimuove l'attributo ReleaseID se presente per evitare data leakage
         int releaseIdIndex = data.attribute("ReleaseID") != null ? data.attribute("ReleaseID").index() : -1;
@@ -47,7 +46,6 @@ public class CrossValidator {
             data = Filter.useFilter(data, remove);
         }
 
-        //Evaluation evaluation = new Evaluation(data);
         double totalAccuracy = 0;
         double totalPrecision = 0;
         double totalRecall = 0;
@@ -56,11 +54,10 @@ public class CrossValidator {
         double totalKappa = 0;
         int totalFolds = folds * repeats;
 
-        Random rand = new Random(seed);
+        Random rand = new Random(SEED);
 
         // 10x10-fold Cross Validation
         for (int i = 0; i < repeats; i++) {
-            Configuration.logger.info("Ripetizione " + (i + 1) + "/" + repeats);
 
             // Shuffle e stratifica
             Instances randData = new Instances(data);
@@ -102,7 +99,6 @@ public class CrossValidator {
 
             // Cross Validation manuale su trainFull
             for (int n = 0; n < folds; n++) {
-                Configuration.logger.info("  - Fold " + (n + 1) + "/" + folds);
 
                 Instances train = trainFull.trainCV(folds, n);
                 Instances test = trainFull.testCV(folds, n);
@@ -111,21 +107,19 @@ public class CrossValidator {
                 Classifier clsCopy = weka.classifiers.AbstractClassifier.makeCopy(cls);
                 clsCopy.buildClassifier(train);
                 Evaluation foldEval = new Evaluation(train);
-                //evaluation.evaluateModel(clsCopy, test);
                 foldEval.evaluateModel(clsCopy, test);
                 double npofb20Fold = CrossValidator.computeNPofB20(clsCopy, test);
 
 
                 EvaluationFoldResult foldResult = new EvaluationFoldResult(
-                        name, applyFeatureSelection, applySmote, seed, i, n,
-                        foldEval.pctCorrect() / 100.0,
-                        foldEval.weightedPrecision(),
-                        foldEval.weightedRecall(),
-                        foldEval.weightedFMeasure(),
-                        foldEval.weightedAreaUnderROC(),
-                        foldEval.kappa(),
-                        npofb20Fold
+                        name, applyFeatureSelection, applySmote, SEED, i, n
                 );
+                foldResult.setAccuracy(foldEval.weightedPrecision());
+                foldResult.setRecall(foldEval.weightedRecall());
+                foldResult.setF1(foldEval.weightedFMeasure());
+                foldResult.setAuc(foldEval.weightedAreaUnderROC());
+                foldResult.setKappa(foldEval.kappa());
+                foldResult.setNpofb20(npofb20Fold);
 
                 foldResults.add(foldResult);
 
@@ -155,8 +149,6 @@ public class CrossValidator {
         double npofb20 = CrossValidator.computeNPofB20(cls, data);
         result.setNpofb20(npofb20);
 
-        long endTime = System.currentTimeMillis();
-        Configuration.logger.info("Tempo totale (ms): " + (endTime - startTime));
         return result;
     }
 

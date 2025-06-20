@@ -13,7 +13,6 @@ public class RunWhatIfDatasetBuilder {
 
             // Carica il dataset A (dal path corretto in base al progetto)
             String arffPath = Configuration.getOutputArffPath();
-            Configuration.logger.info("Caricamento dataset A da: " + arffPath);
             Instances datasetA = new DataSource(arffPath).getDataSet();
 
 
@@ -25,8 +24,8 @@ public class RunWhatIfDatasetBuilder {
             // Costruisci B+, C, B
             WhatIfDatasetBuilder builder = new WhatIfDatasetBuilder("whatif/");
             Instances bPlus = builder.buildBPlus(datasetA);
-            Instances c = builder.buildC(datasetA);
-            Instances b = builder.buildB(bPlus);
+            builder.buildC(datasetA);
+            builder.buildB(bPlus);
 
             Configuration.logger.info("FINE: Costruzione completata");
         } catch (Exception e) {

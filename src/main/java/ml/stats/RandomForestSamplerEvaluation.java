@@ -84,10 +84,10 @@ public class RandomForestSamplerEvaluation {
             }
 
             EvaluationResult result = evaluateAndWrap(
-                    runName, rf, sample, SEED, 10, 10, applyFeatureSelection, applySmote
+                    runName, rf, sample, 10, 10, applyFeatureSelection, applySmote
             );
 
-            Configuration.logger.info("Valutazione completata: " + result);
+            Configuration.logger.info(String.format("Valutazione completata: %s", result));
             EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
 
         } catch (Exception e) {

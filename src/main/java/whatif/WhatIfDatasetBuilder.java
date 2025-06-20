@@ -14,8 +14,8 @@ import java.nio.file.Paths;
 import java.util.function.DoublePredicate;
 
 /**
- Classe per la costruzione dei sotto-dataset necessari all’analisi What-If.
- Usa sempre la feature "Number of Smells" per costruire i dataset B⁺, B e C.
+ * Classe per la costruzione dei sotto-dataset necessari all’analisi What-If.
+ * Usa sempre la feature "Number of Smells" per costruire i dataset B⁺, B e C.
  */
 public class WhatIfDatasetBuilder {
 
@@ -25,12 +25,6 @@ public class WhatIfDatasetBuilder {
         this.outputDir = outputDir.endsWith("/") ? outputDir : outputDir + "/";
     }
 
-
-    /*private static final String RAW_FEATURE_NAME = Configuration.SELECTED_PROJECT == ProjectType.BOOKKEEPER
-            ? "Number of Smells"
-            : "NestingDepth";
-
-     */
     private static final String RAW_FEATURE_NAME = "Number of Smells";
 
     //private static final String OUTPUT_DIR = "whatif/";
@@ -60,7 +54,6 @@ public class WhatIfDatasetBuilder {
         }
 
         exportToCsv(cloned, PROJECT_PREFIX + "_B.csv");
-        Configuration.logger.info("Esportato dataset B con " + cloned.size() + " istanze.");
         return cloned;
     }
 
@@ -76,7 +69,6 @@ public class WhatIfDatasetBuilder {
         }
 
         exportToCsv(filtered, exportFile);
-        Configuration.logger.info("Esportato " + exportFile + " con " + filtered.size() + " istanze.");
         return filtered;
     }
 
@@ -100,7 +92,6 @@ public class WhatIfDatasetBuilder {
             saver.setFieldSeparator(","); // puoi cambiare in ";" per compatibilità Excel IT
             saver.writeBatch();
 
-            Configuration.logger.info("Esportato CSV pulito: " + fileName);
         } catch (IOException e) {
             Configuration.logger.severe("Errore durante l'export in CSV: " + e.getMessage());
         }

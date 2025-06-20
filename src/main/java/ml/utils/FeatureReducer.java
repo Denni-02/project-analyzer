@@ -72,7 +72,7 @@ public class FeatureReducer {
             saver.setInstances(reduced);
             saver.setFile(new File(outPath));
             saver.writeBatch();
-            Configuration.logger.info("Dataset ridotto salvato in: " + outPath);
+            Configuration.logger.info(String.format("Dataset ridotto salvato in: %s ", outPath));
 
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore durante la feature selection", e);

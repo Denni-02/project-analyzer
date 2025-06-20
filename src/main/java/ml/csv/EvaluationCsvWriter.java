@@ -2,11 +2,9 @@ package ml.csv;
 
 import ml.model.EvaluationResult;
 import util.Configuration;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class EvaluationCsvWriter {
 
@@ -29,7 +27,7 @@ public class EvaluationCsvWriter {
             String smote = tokens[2].split("=")[1];
 
             writer.write(String.format(
-                    "%s,%s,%s,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+                    "%s,%s,%s,%.4f,%.4f,%.4f,%.4f,%.4f%n",
                     classifier, fs, smote,
                     result.getPrecision(),
                     result.getRecall(),

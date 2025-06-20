@@ -1,6 +1,5 @@
 package whatif;
 
-import ml.evaluation.ClassifierFactory;
 import util.Configuration;
 import util.ProjectType;
 import weka.classifiers.Classifier;
@@ -11,7 +10,7 @@ import weka.core.Instances;
 import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
 import weka.filters.Filter;
-import weka.filters.supervised.instance.Resample;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -25,14 +24,19 @@ import weka.filters.unsupervised.attribute.Remove;
 
 public class WhatIfPredictor {
 
+    private static final String OLD_ATTRIBUTE = "Old_Bugginess";
+
+    private WhatIfPredictor(){
+        // Prevent instantation
+    }
+
     // Metodo principale per eseguire la predizione What-If
     public static List<PredictionSummary> runPrediction(
             String datasetAPath,
             String bPlusPath,
             String bPath,
             String cPath,
-            String outputCsvPath,
-            String projectName
+            String outputCsvPath
     ) throws Exception {
 
         // Carica i dataset
@@ -121,13 +125,11 @@ public class WhatIfPredictor {
 
         // Assicura che bugginess sia la classe, anche se è stata spostata
         for (int i = 0; i < filtered.numAttributes(); i++) {
-            System.out.println("  " + i + ": " + filtered.attribute(i).name());
             if (filtered.attribute(i).name().equalsIgnoreCase(classAttr)) {
                 filtered.setClassIndex(i);
                 break;
             }
         }
-        System.out.println("→ Class index: " + filtered.classIndex() + " (" + filtered.classAttribute().name() + ")");
 
         return filtered;
     }
@@ -209,7 +211,6 @@ public class WhatIfPredictor {
             if ((int) predicted == 1) predictedBuggy++;
         }
 
-        Configuration.logger.info("[" + name + "] Real buggy: " + actualBuggy + ", Predicted buggy: " + predictedBuggy);
         return new PredictionSummary(name, actualBuggy, predictedBuggy);
     }
 
@@ -221,13 +222,13 @@ public class WhatIfPredictor {
                 String aValue = s.datasetName.equals("B") ? "" : String.valueOf(s.realBuggy);
                 writer.write(s.datasetName + "," + aValue + "," + s.predictedBuggy + "\n");
             }
-            Configuration.logger.info("Tabella riassuntiva salvata in: " + path);
         } catch (IOException e) {
             Configuration.logger.severe("Errore durante salvataggio CSV: " + e.getMessage());
         }
     }
 
-    // Riordina i valori della classe Bugginess in modo che siano sempre {no, yes}
+
+    // Riordina i valori della classe Bugginess
     private static Instances reorderBugginessValues(Instances data) throws Exception {
         Attribute classAttr = data.classAttribute();
 
@@ -242,7 +243,7 @@ public class WhatIfPredictor {
         }
 
         // Rinomina il vecchio attributo per evitare conflitto
-        data.renameAttribute(classAttr, "Old_Bugginess");
+        data.renameAttribute(classAttr, OLD_ATTRIBUTE);
 
         // Crea nuovo attributo con ordine corretto
         ArrayList<String> newValues = new ArrayList<>();
@@ -257,13 +258,13 @@ public class WhatIfPredictor {
         // Copia i valori corretti
         for (int i = 0; i < data.numInstances(); i++) {
             Instance inst = data.instance(i);
-            String original = inst.stringValue(data.attribute("Old_Bugginess")).toLowerCase();
+            String original = inst.stringValue(data.attribute(OLD_ATTRIBUTE)).toLowerCase();
             inst.setValue(newClassIndex, original.equals("yes") ? "yes" : "no");
         }
 
         // Rimuovi vecchio attributo
         Remove remove = new Remove();
-        remove.setAttributeIndicesArray(new int[]{data.attribute("Old_Bugginess").index()});
+        remove.setAttributeIndicesArray(new int[]{data.attribute(OLD_ATTRIBUTE).index()});
         remove.setInputFormat(data);
         data = Filter.useFilter(data, remove);
 

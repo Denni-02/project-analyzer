@@ -20,11 +20,11 @@ import java.nio.file.Paths;
 // Classe per ricalcolare le metriche su un singolo metodo che è stato rifattorizzato
 public class SingleFileMetricAnalyzer {
 
-    private static final String fileName = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
+    private static final String FILE_NAME = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
             ? "/home/denni/isw2/bookkeeper/bookkeeper-benchmark/src/main/java/org/apache/bookkeeper/benchmark/BenchReadThroughputLatency.java"
             : "/home/denni/isw2/openjpa/openjpa-persistence/src/main/java/org/apache/openjpa/persistence/HintHandler.java";
 
-    private static final String outputName = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
+    private static final String OUTPUT_NAME = Configuration.SELECTED_PROJECT == util.ProjectType.BOOKKEEPER
             ? "ml_results/bookkeeper_AFMethod2_metrics.csv"
             : "ml_results/openjpa_AFMethod2_metrics.csv";
 
@@ -38,7 +38,7 @@ public class SingleFileMetricAnalyzer {
         jgitLogger.setLevel(ch.qos.logback.classic.Level.ERROR);
 
         // Specifica il file Java da analizzare
-        File javaFile = new File(fileName);
+        File javaFile = new File(FILE_NAME);
         if (!javaFile.exists()) {
             return;
         }
@@ -106,7 +106,7 @@ public class SingleFileMetricAnalyzer {
             }
 
             // Scrivi output CSV
-            try (FileWriter fw = new FileWriter(outputName)) {
+            try (FileWriter fw = new FileWriter(OUTPUT_NAME)) {
                 fw.write("Method;LOC;Cyclomatic;Cognitive;ParameterCount;NestingDepth;StatementCount;ReturnTypeComplexity;LocalVarCount;Smells;SmellTypes\n");
                 for (MethodInfo m : results) {
                     fw.write(String.format("%s;%d;%d;%d;%d;%d;%d;%d;%d;%d;\"%s\"%n",

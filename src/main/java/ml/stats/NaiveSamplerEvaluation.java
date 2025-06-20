@@ -76,10 +76,10 @@ public class NaiveSamplerEvaluation {
             }
 
             EvaluationResult result = evaluateAndWrap(
-                    runName, naiveBayes, sample, 42, 10, 10, applyFeatureSelection, applySmote
+                    runName, naiveBayes, sample, 10, 10, applyFeatureSelection, applySmote
             );
 
-            Configuration.logger.info("Valutazione completata: " + result);
+            Configuration.logger.info(String.format("Valutazione completata: %s", result));
             EvaluationCsvWriter.write(Configuration.getProjectColumn(), result);
 
         } catch (Exception e) {
