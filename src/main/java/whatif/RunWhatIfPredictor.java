@@ -30,7 +30,6 @@ public class RunWhatIfPredictor {
             Configuration.logger.info("FINE: Predizione completata");
         } catch (Exception e) {
             Configuration.logger.severe("Errore nella predizione What-If: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }

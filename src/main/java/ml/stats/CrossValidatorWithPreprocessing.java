@@ -43,7 +43,6 @@ public class CrossValidatorWithPreprocessing {
 
         } catch (Exception e) {
             Configuration.logger.severe("Errore durante la valutazione con preprocessing: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }

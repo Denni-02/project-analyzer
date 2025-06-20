@@ -1,10 +1,12 @@
 package ml.csv;
 
 import ml.model.EvaluationFoldResult;
+import util.Configuration;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.logging.Level;
 
 public class DetailedFoldCsvWriter {
 
@@ -22,7 +24,7 @@ public class DetailedFoldCsvWriter {
                         r.getAccuracy(), r.getPrecision(), r.getRecall(), r.getF1(), r.getAuc(), r.getKappa(), r.getNpofb20());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Configuration.logger.log(Level.SEVERE, "Errore nel calcolo della correlazione Spearman", e);
         }
     }
 }

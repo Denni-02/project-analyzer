@@ -86,7 +86,6 @@ public class AFMethodFinder {
 
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore nella selezione dell'AFMethod", e);
-            e.printStackTrace();
         }
     }
 }

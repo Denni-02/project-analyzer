@@ -30,7 +30,6 @@ public class RunWhatIfDatasetBuilder {
             Configuration.logger.info("FINE: Costruzione completata");
         } catch (Exception e) {
             Configuration.logger.severe("Errore durante la costruzione dei dataset What-If: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 

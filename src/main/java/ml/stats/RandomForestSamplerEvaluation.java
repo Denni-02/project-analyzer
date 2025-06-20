@@ -91,7 +91,6 @@ public class RandomForestSamplerEvaluation {
 
         } catch (Exception e) {
             Configuration.logger.log(Level.SEVERE, "Errore durante la valutazione RandomForest con sampling OpenJPA", e);
-            e.printStackTrace();
         }
     }
 }

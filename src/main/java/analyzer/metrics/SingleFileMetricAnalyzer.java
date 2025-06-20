@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 
 // Classe per ricalcolare le metriche su un singolo metodo che è stato rifattorizzato
 public class SingleFileMetricAnalyzer {
@@ -118,7 +119,7 @@ public class SingleFileMetricAnalyzer {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Configuration.logger.log(Level.SEVERE, "Errore nel calcolo della correlazione Spearman", e);
         }
     }
 }
