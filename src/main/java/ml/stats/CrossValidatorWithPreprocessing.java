@@ -27,7 +27,7 @@ public class CrossValidatorWithPreprocessing {
 
             // Esegui una sola combinazione (modificare a seconda dei test desiderati)
             boolean applyFS = false;
-            boolean applySMOTE = true;
+            boolean applySMOTE = false;
 
             for (Classifier cls : new Classifier[]{
                     ml.evaluation.ClassifierFactory.getNaiveBayes(),

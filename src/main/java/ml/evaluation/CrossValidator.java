@@ -16,7 +16,6 @@ import weka.filters.unsupervised.attribute.Remove;
 import weka.filters.unsupervised.attribute.RemoveUseless;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class CrossValidator {
 
@@ -52,21 +51,12 @@ public class CrossValidator {
         double totalF1 = 0;
         double totalAUC = 0;
         double totalKappa = 0;
-        int totalFolds = folds * repeats;
-
-        Random rand = new Random(SEED); // NOSONAR: uso intenzionale e sicuro per riproducibilità esperimenti ML
+        int totalFolds = (folds - 1) * repeats;
 
         // 10x10-fold Cross Validation
         for (int i = 0; i < repeats; i++) {
 
-            // Shuffle e stratifica
-            Instances randData = new Instances(data);
-            randData.randomize(rand);
-            if (randData.classAttribute().isNominal()) {
-                randData.stratify(folds);
-            }
-
-            Instances trainFull = new Instances(randData); // usato per FS e SMOTE
+            Instances trainFull = new Instances(data);
 
             // Applica Feature Selection su tutte le istanze
             if (applyFeatureSelection) {
@@ -97,11 +87,16 @@ public class CrossValidator {
 
             List<EvaluationFoldResult> foldResults = new ArrayList<>();
 
-            // Cross Validation manuale su trainFull
-            for (int n = 0; n < folds; n++) {
+            int totalInstances = trainFull.numInstances();
+            int foldSize = totalInstances / folds;
 
-                Instances train = trainFull.trainCV(folds, n);
-                Instances test = trainFull.testCV(folds, n);
+            for (int n = 1; n < folds; n++) {
+                int trainEnd = n * foldSize;
+                int testStart = trainEnd;
+                int testEnd = Math.min(testStart + foldSize, totalInstances);
+
+                Instances train = new Instances(trainFull, 0, trainEnd);
+                Instances test = new Instances(trainFull, testStart, testEnd - testStart);
 
                 // Clona il classificatore e addestra
                 Classifier clsCopy = weka.classifiers.AbstractClassifier.makeCopy(cls);
@@ -109,7 +104,6 @@ public class CrossValidator {
                 Evaluation foldEval = new Evaluation(train);
                 foldEval.evaluateModel(clsCopy, test);
                 double npofb20Fold = CrossValidator.computeNPofB20(clsCopy, test);
-
 
                 EvaluationFoldResult foldResult = new EvaluationFoldResult(
                         name, applyFeatureSelection, applySmote, SEED, i, n
@@ -123,7 +117,6 @@ public class CrossValidator {
 
                 foldResults.add(foldResult);
 
-
                 totalAccuracy += foldEval.pctCorrect() / 100.0;
                 totalPrecision += foldEval.weightedPrecision();
                 totalRecall += foldEval.weightedRecall();
@@ -131,6 +124,7 @@ public class CrossValidator {
                 totalAUC += foldEval.weightedAreaUnderROC();
                 totalKappa += foldEval.kappa();
             }
+
 
             DetailedFoldCsvWriter.writeAll(foldResults);
         }
