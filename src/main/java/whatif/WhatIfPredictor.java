@@ -201,9 +201,7 @@ public class WhatIfPredictor {
         int actualBuggy = 0;
         int predictedBuggy = 0;
 
-        Set<Double> uniqueClassValues = new HashSet<>();
         for (Instance instance : data) {
-            uniqueClassValues.add(instance.classValue());
             double actual = instance.classValue();
             double predicted = model.classifyInstance(instance);
 
