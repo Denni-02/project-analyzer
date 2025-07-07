@@ -1,0 +1,149 @@
+public static void main(String[] args) throws IOException, ParseException, InterruptedException, KeeperException {
+    CommandLine cmd = parseCommandLine(args);
+    validateCommandLine(cmd);
+
+    final String servers = cmd.getOptionValue("zookeeper", "localhost:2181");
+    final String passwordStr = cmd.getOptionValue("password", "benchPasswd");
+    final byte[] passwd = passwordStr.getBytes(StandardCharsets.UTF_8);
+    final int sockTimeout = Integer.parseInt(cmd.getOptionValue("sockettimeout", "5"));
+
+    final ClientConfiguration conf = new ClientConfiguration();
+    conf.setReadTimeout(sockTimeout).setZkServers(servers);
+
+    final AtomicInteger ledger = new AtomicInteger(0);
+    final AtomicInteger numLedgers = new AtomicInteger(0);
+
+    if (cmd.hasOption("ledger")) {
+        ledger.set(Integer.parseInt(cmd.getOptionValue("ledger")));
+    } else {
+        numLedgers.set(Integer.parseInt(cmd.getOptionValue("listen")));
+    }
+
+    final CountDownLatch shutdownLatch = new CountDownLatch(1);
+    final CountDownLatch connectedLatch = new CountDownLatch(1);
+    final String nodepath = String.format("/ledgers/L%010d", ledger.get());
+
+    try (ZooKeeper zk = initializeZooKeeper(servers, connectedLatch, shutdownLatch, nodepath, conf, ledger, numLedgers, passwd)) {
+        connectedLatch.await();
+
+        if (ledger.get() != 0) {
+            if (zk.exists(nodepath, true) != null) {
+                readLedger(conf, ledger.get(), passwd);
+                shutdownLatch.countDown();
+            } else if (LOG.isInfoEnabled()) {
+                LOG.info("Watching for creation of " + nodepath);
+            }
+        } else {
+            zk.getChildren("/ledgers", true);
+        }
+
+        shutdownLatch.await();
+        if (LOG.isInfoEnabled()) {
+            LOG.info("Shutting down");
+        }
+    }
+}
+
+private static CommandLine parseCommandLine(String[] args) throws ParseException {
+    Options options = new Options();
+    options.addOption("ledger", true, "Ledger to read.");
+    options.addOption("listen", true, "Listen for creation of ledgers.");
+    options.addOption("password", true, "Password used to access ledgers (default 'benchPasswd')");
+    options.addOption("zookeeper", true, "Zookeeper ensemble, default 'localhost:2181'");
+    options.addOption("sockettimeout", true, "Socket timeout for bookkeeper client. Default 5");
+    options.addOption("help", false, "This message");
+
+    CommandLineParser parser = new DefaultParser();
+    CommandLine cmd = parser.parse(options, args);
+
+    if (cmd.hasOption("help")) {
+        usage(options);
+        System.exit(-1);
+    }
+    return cmd;
+}
+
+private static void validateCommandLine(CommandLine cmd) {
+    if (cmd.hasOption("ledger") && cmd.hasOption("listen")) {
+        LOG.error("Cannot use -ledger and -listen together");
+        usage(new Options());
+        System.exit(-1);
+    } else if (!cmd.hasOption("ledger") && !cmd.hasOption("listen")) {
+        LOG.error("You must use -ledger or -listen");
+        usage(new Options());
+        System.exit(-1);
+    }
+}
+
+private static ZooKeeper initializeZooKeeper(
+        String servers,
+        CountDownLatch connectedLatch,
+        CountDownLatch shutdownLatch,
+        String nodepath,
+        ClientConfiguration conf,
+        AtomicInteger ledger,
+        AtomicInteger numLedgers,
+        byte[] passwd
+) throws IOException {
+    ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
+        @Override
+        public void process(WatchedEvent event) {
+            if (event.getState() == Event.KeeperState.SyncConnected &&
+                event.getType() == Event.EventType.None) {
+                connectedLatch.countDown();
+            }
+        }
+    });
+
+    zk.register(new Watcher() {
+        @Override
+        public void process(WatchedEvent event) {
+            try {
+                if (event.getState() == Event.KeeperState.SyncConnected &&
+                    event.getType() == Event.EventType.None) {
+                    connectedLatch.countDown();
+                } else if (event.getType() == Event.EventType.NodeCreated &&
+                           event.getPath().equals(nodepath)) {
+                    readLedger(conf, ledger.get(), passwd);
+                    shutdownLatch.countDown();
+                } else if (event.getType() == Event.EventType.NodeChildrenChanged) {
+                    handleLedgerChildrenChange(zk, numLedgers, conf, passwd, shutdownLatch);
+                } else {
+                    LOG.warn("Unknown event {}", event);
+                }
+            } catch (KeeperException | InterruptedException e) {
+                LOG.error("ZooKeeper exception", e);
+            }
+        }
+    });
+
+    return zk;
+}
+
+private static void handleLedgerChildrenChange(ZooKeeper zk, AtomicInteger numLedgers,
+                                               ClientConfiguration conf, byte[] passwd,
+                                               CountDownLatch shutdownLatch)
+        throws KeeperException, InterruptedException {
+    if (numLedgers.get() < 0) {
+        return;
+    }
+    List<String> children = zk.getChildren("/ledgers", true);
+    List<String> ledgers = children.stream()
+        .filter(child -> LEDGER_PATTERN.matcher(child).find())
+        .sorted(ZK_LEDGER_COMPARE)
+        .collect(Collectors.toList());
+
+    if (!ledgers.isEmpty()) {
+        String last = ledgers.get(ledgers.size() - 1);
+        Matcher m = LEDGER_PATTERN.matcher(last);
+        if (m.find()) {
+            int ledgersLeft = numLedgers.decrementAndGet();
+            new Thread(() -> readLedger(conf, Long.parseLong(m.group(1)), passwd)).start();
+            if (ledgersLeft <= 0) {
+                shutdownLatch.countDown();
+            }
+        } else {
+            LOG.error("Cannot find ledger ID in {}", last);
+        }
+    }
+}

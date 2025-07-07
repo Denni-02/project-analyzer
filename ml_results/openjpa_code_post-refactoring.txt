@@ -1,0 +1,75 @@
+public void setHint(String key, Object value) {
+    Boolean status = record(key, value);
+    if (Boolean.FALSE.equals(status)) return;
+
+    FetchPlan plan = owner.getFetchPlan();
+    if (status == null) {
+        plan.setHint(key, value);
+        return;
+    }
+
+    if (handleSpecialHints(key, value, plan)) {
+        return;
+    }
+
+    plan.setHint(key, value);
+}
+
+private boolean handleSpecialHints(String key, Object value, FetchPlan plan) {
+    ClassLoader loader = owner.getDelegate().getBroker().getClassLoader();
+
+    if (QueryHints.HINT_SUBCLASSES.equals(key)) {
+        handleSubclassesHint(value);
+        return true;
+    }
+
+    if (QueryHints.HINT_FILTER_LISTENER.equals(key)) {
+        owner.addFilterListener(Filters.hintToFilterListener(value, loader));
+        return true;
+    }
+
+    if (QueryHints.HINT_FILTER_LISTENERS.equals(key)) {
+        FilterListener[] arr = Filters.hintToFilterListeners(value, loader);
+        for (FilterListener listener : arr) {
+            owner.addFilterListener(listener);
+        }
+        return true;
+    }
+
+    if (QueryHints.HINT_AGGREGATE_LISTENER.equals(key)) {
+        owner.addAggregateListener(Filters.hintToAggregateListener(value, loader));
+        return true;
+    }
+
+    if (QueryHints.HINT_AGGREGATE_LISTENERS.equals(key)) {
+        AggregateListener[] arr = Filters.hintToAggregateListeners(value, loader);
+        for (AggregateListener listener : arr) {
+            owner.addAggregateListener(listener);
+        }
+        return true;
+    }
+
+    if (QueryHints.HINT_RESULT_COUNT.equals(key)) {
+        int v = (Integer) Filters.convert(value, Integer.class);
+        if (v < 0) {
+            throw new IllegalArgumentException(_loc.get("bad-query-hint-value", key, value).toString());
+        }
+        plan.setHint(key, v);
+        return true;
+    }
+
+    if (QueryHints.HINT_INVALIDATE_PREPARED_QUERY.equals(key)) {
+        plan.setHint(key, Filters.convert(value, Boolean.class));
+        owner.invalidatePreparedQuery();
+        return true;
+    }
+
+    if (QueryHints.HINT_IGNORE_PREPARED_QUERY.equals(key)) {
+        plan.setHint(key, Filters.convert(value, Boolean.class));
+        owner.ignorePreparedQuery();
+        return true;
+    }
+
+    return false; // default
+}
+

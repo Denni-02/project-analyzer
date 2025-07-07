@@ -1,0 +1,44 @@
+public void setHint(String key, Object value) {
+        Boolean status = record(key, value);
+        if (Boolean.FALSE.equals(status))
+            return;
+        FetchPlan plan = owner.getFetchPlan();
+        if (status == null) {
+            plan.setHint(key, value);
+            return;
+        }
+       
+        ClassLoader loader = owner.getDelegate().getBroker().getClassLoader();
+        if (QueryHints.HINT_SUBCLASSES.equals(key)) {
+            if (value instanceof String)
+                value = Boolean.valueOf((String) value);
+            owner.setSubclasses(((Boolean) value).booleanValue());
+        } else if (QueryHints.HINT_FILTER_LISTENER.equals(key)) {
+            owner.addFilterListener(Filters.hintToFilterListener(value, loader));
+        } else if (QueryHints.HINT_FILTER_LISTENERS.equals(key)) {
+            FilterListener[] arr = Filters.hintToFilterListeners(value, loader);
+            for (int i = 0; i < arr.length; i++)
+                owner.addFilterListener(arr[i]);
+        } else if (QueryHints.HINT_AGGREGATE_LISTENER.equals(key)) {
+            owner.addAggregateListener(Filters.hintToAggregateListener(value, loader));
+        } else if (QueryHints.HINT_AGGREGATE_LISTENERS.equals(key)) {
+            AggregateListener[] arr = Filters.hintToAggregateListeners(value, loader);
+            for (int i = 0; i < arr.length; i++) {
+                owner.addAggregateListener(arr[i]);
+            }
+        } else if (QueryHints.HINT_RESULT_COUNT.equals(key)) {
+            int v = (Integer) Filters.convert(value, Integer.class);
+            if (v < 0) {
+                throw new IllegalArgumentException(_loc.get("bad-query-hint-value", key, value).toString());
+            }
+            plan.setHint(key, v);
+        } else if (QueryHints.HINT_INVALIDATE_PREPARED_QUERY.equals(key)) {
+            plan.setHint(key, Filters.convert(value, Boolean.class));
+            owner.invalidatePreparedQuery();
+        } else if (QueryHints.HINT_IGNORE_PREPARED_QUERY.equals(key)) {
+            plan.setHint(key, Filters.convert(value, Boolean.class));
+            owner.ignorePreparedQuery();
+        } else { // default
+            plan.setHint(key, value);
+        }
+    }
